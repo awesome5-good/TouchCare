@@ -171,20 +171,20 @@
   .body-btn { border: 2px solid var(--border); border-radius: var(--radius); padding: 16px 8px; text-align: center; cursor: pointer; transition: all 0.2s; background: white; }
   .body-btn:hover { border-color: var(--primary); background: var(--primary-light); }
   .body-btn.selected { border-color: var(--primary); background: var(--primary-light); }
-  .body-icon { font-size: 28px; display: block; margin-bottom: 6px; }
+  .body-icon { display: flex; justify-content: center; align-items: center; margin-bottom: 8px; }
   .body-label { font-size: 13px; font-weight: 600; color: var(--text); }
 
-  .pain-slider-wrap { position: relative; }
+  .pain-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
   .pain-value-display { font-size: 48px; font-weight: 800; color: var(--accent); line-height: 1; }
   .pain-value-display span { font-size: 20px; font-weight: 400; color: var(--text-muted); }
-  .pain-label-badge { display: inline-block; background: var(--accent-light); color: var(--accent); padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; margin: 8px 0 12px; }
-  input[type=range] { width: 100%; height: 6px; border-radius: 3px; outline: none; cursor: pointer; -webkit-appearance: none; background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%); }
+  .pain-label-badge { display: inline-block; background: var(--accent-light); color: var(--accent); padding: 5px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+  input[type=range] { width: 100%; height: 6px; border-radius: 3px; outline: none; cursor: pointer; -webkit-appearance: none; background: linear-gradient(90deg, var(--teal) 0%, var(--accent) 50%, var(--danger) 100%); }
   input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: white; border: 3px solid var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.2); cursor: pointer; }
-  .pain-marks { display: flex; justify-content: space-between; margin-top: 8px; }
-  .pain-marks span { font-size: 12px; color: var(--text-muted); }
-  .pain-mark-nums { display: flex; justify-content: space-between; padding: 0 2px; margin-top: 4px; }
-  .pain-mark-num { font-size: 12px; color: var(--text-muted); width: 20px; text-align: center; }
-  .pain-mark-num.active { color: var(--accent); font-weight: 700; }
+  .pain-num-markers { display: flex; justify-content: space-between; margin-top: 8px; padding: 0 2px; }
+  .pain-num-marker { font-size: 12px; color: var(--text-muted); width: 24px; height: 24px; text-align: center; line-height: 24px; border-radius: 50%; cursor: pointer; transition: all 0.15s; }
+  .pain-num-marker.active { background: var(--navy); color: white; font-weight: 700; }
+  .pain-marks { display: flex; justify-content: space-between; margin-top: 6px; }
+  .pain-marks span { font-size: 11px; color: var(--text-muted); }
 
   .quick-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
   .quick-tag { padding: 5px 12px; border: 1.5px solid var(--border); border-radius: 20px; font-size: 12px; cursor: pointer; color: var(--text-muted); transition: all 0.2s; background: white; }
@@ -216,8 +216,16 @@
   .patient-stat-divider { width: 1px; background: rgba(255,255,255,0.2); }
 
   .condition-summary { background: white; border-radius: var(--radius); padding: 20px; margin-bottom: 20px; box-shadow: var(--shadow); border: 1px solid var(--border); }
-  .condition-summary h3 { font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+  .condition-summary-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .condition-badge { background: var(--teal-light); color: var(--teal); font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
   .condition-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .condition-table { width: 100%; }
+  .condition-row { display: flex; gap: 16px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; align-items: flex-start; }
+  .condition-row:last-child { border-bottom: none; }
+  .condition-key { width: 96px; flex-shrink: 0; color: var(--text-muted); font-weight: 500; padding-top: 2px; font-size: 12px; }
+  .condition-val { flex: 1; color: var(--text); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .tension-col-header { display: grid; grid-template-columns: 80px 1fr; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 600; color: var(--text-muted); gap: 16px; }
+  .save-notice { background: var(--primary-light); border-radius: var(--radius-sm); padding: 13px 16px; font-size: 13px; color: var(--text-muted); display: flex; align-items: flex-start; gap: 8px; margin-top: 16px; line-height: 1.55; }
   .condition-chip { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; }
   .chip-pain { background: var(--danger-light); color: var(--danger); }
   .chip-level { background: var(--accent-light); color: var(--accent); }
@@ -566,11 +574,76 @@
         </div>
       </div>
       <div class="body-selector">
-        <div class="body-btn" onclick="selectBody('목')"><span class="body-icon">🔵</span><span class="body-label">목</span></div>
-        <div class="body-btn" onclick="selectBody('어깨')"><span class="body-icon">🔵</span><span class="body-label">어깨</span></div>
-        <div class="body-btn" onclick="selectBody('허리')"><span class="body-icon">🔵</span><span class="body-label">허리</span></div>
-        <div class="body-btn" onclick="selectBody('골반')"><span class="body-icon">🔵</span><span class="body-label">골반</span></div>
-        <div class="body-btn" onclick="selectBody('다리')"><span class="body-icon">🔵</span><span class="body-label">다리</span></div>
+        <div class="body-btn" onclick="selectBody('목')">
+          <span class="body-icon"><svg viewBox="0 0 56 90" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:52px;height:52px">
+            <circle cx="28" cy="9" r="8" fill="#d4d4d4"/>
+            <rect x="24" y="17" width="8" height="7" rx="2" fill="#2ba0a0"/>
+            <path d="M12 24 L44 24 L43 43 L13 43 Z" fill="#d4d4d4"/>
+            <rect x="5" y="24" width="7" height="20" rx="3" fill="#d4d4d4"/>
+            <rect x="44" y="24" width="7" height="20" rx="3" fill="#d4d4d4"/>
+            <rect x="17" y="43" width="22" height="12" rx="2" fill="#d4d4d4"/>
+            <rect x="14" y="55" width="28" height="9" rx="3" fill="#d4d4d4"/>
+            <rect x="15" y="64" width="11" height="26" rx="3" fill="#d4d4d4"/>
+            <rect x="30" y="64" width="11" height="26" rx="3" fill="#d4d4d4"/>
+          </svg></span>
+          <span class="body-label">목</span>
+        </div>
+        <div class="body-btn" onclick="selectBody('어깨')">
+          <span class="body-icon"><svg viewBox="0 0 56 90" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:52px;height:52px">
+            <circle cx="28" cy="9" r="8" fill="#d4d4d4"/>
+            <rect x="24" y="17" width="8" height="7" rx="2" fill="#d4d4d4"/>
+            <path d="M12 24 L44 24 L43 43 L13 43 Z" fill="#2ba0a0"/>
+            <rect x="5" y="24" width="7" height="20" rx="3" fill="#2ba0a0"/>
+            <rect x="44" y="24" width="7" height="20" rx="3" fill="#2ba0a0"/>
+            <rect x="17" y="43" width="22" height="12" rx="2" fill="#d4d4d4"/>
+            <rect x="14" y="55" width="28" height="9" rx="3" fill="#d4d4d4"/>
+            <rect x="15" y="64" width="11" height="26" rx="3" fill="#d4d4d4"/>
+            <rect x="30" y="64" width="11" height="26" rx="3" fill="#d4d4d4"/>
+          </svg></span>
+          <span class="body-label">어깨</span>
+        </div>
+        <div class="body-btn" onclick="selectBody('허리')">
+          <span class="body-icon"><svg viewBox="0 0 56 90" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:52px;height:52px">
+            <circle cx="28" cy="9" r="8" fill="#d4d4d4"/>
+            <rect x="24" y="17" width="8" height="7" rx="2" fill="#d4d4d4"/>
+            <path d="M12 24 L44 24 L43 43 L13 43 Z" fill="#d4d4d4"/>
+            <rect x="5" y="24" width="7" height="20" rx="3" fill="#d4d4d4"/>
+            <rect x="44" y="24" width="7" height="20" rx="3" fill="#d4d4d4"/>
+            <rect x="17" y="43" width="22" height="12" rx="2" fill="#2ba0a0"/>
+            <rect x="14" y="55" width="28" height="9" rx="3" fill="#d4d4d4"/>
+            <rect x="15" y="64" width="11" height="26" rx="3" fill="#d4d4d4"/>
+            <rect x="30" y="64" width="11" height="26" rx="3" fill="#d4d4d4"/>
+          </svg></span>
+          <span class="body-label">허리</span>
+        </div>
+        <div class="body-btn" onclick="selectBody('골반')">
+          <span class="body-icon"><svg viewBox="0 0 56 90" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:52px;height:52px">
+            <circle cx="28" cy="9" r="8" fill="#d4d4d4"/>
+            <rect x="24" y="17" width="8" height="7" rx="2" fill="#d4d4d4"/>
+            <path d="M12 24 L44 24 L43 43 L13 43 Z" fill="#d4d4d4"/>
+            <rect x="5" y="24" width="7" height="20" rx="3" fill="#d4d4d4"/>
+            <rect x="44" y="24" width="7" height="20" rx="3" fill="#d4d4d4"/>
+            <rect x="17" y="43" width="22" height="12" rx="2" fill="#d4d4d4"/>
+            <rect x="14" y="55" width="28" height="9" rx="3" fill="#2ba0a0"/>
+            <rect x="15" y="64" width="11" height="26" rx="3" fill="#d4d4d4"/>
+            <rect x="30" y="64" width="11" height="26" rx="3" fill="#d4d4d4"/>
+          </svg></span>
+          <span class="body-label">골반</span>
+        </div>
+        <div class="body-btn" onclick="selectBody('다리')">
+          <span class="body-icon"><svg viewBox="0 0 56 90" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:52px;height:52px">
+            <circle cx="28" cy="9" r="8" fill="#d4d4d4"/>
+            <rect x="24" y="17" width="8" height="7" rx="2" fill="#d4d4d4"/>
+            <path d="M12 24 L44 24 L43 43 L13 43 Z" fill="#d4d4d4"/>
+            <rect x="5" y="24" width="7" height="20" rx="3" fill="#d4d4d4"/>
+            <rect x="44" y="24" width="7" height="20" rx="3" fill="#d4d4d4"/>
+            <rect x="17" y="43" width="22" height="12" rx="2" fill="#d4d4d4"/>
+            <rect x="14" y="55" width="28" height="9" rx="3" fill="#d4d4d4"/>
+            <rect x="15" y="64" width="11" height="26" rx="3" fill="#2ba0a0"/>
+            <rect x="30" y="64" width="11" height="26" rx="3" fill="#2ba0a0"/>
+          </svg></span>
+          <span class="body-label">다리</span>
+        </div>
       </div>
     </div>
 
@@ -583,9 +656,23 @@
           <p>느껴지는 정도에 맞춰 숫자를 선택하거나 밀어주세요</p>
         </div>
       </div>
-      <div class="pain-value-display"><span id="pain-val">4</span><span> / 10</span></div>
-      <div class="pain-label-badge" id="pain-label">약간 뻐근</div>
+      <div class="pain-header-row">
+        <div class="pain-value-display"><span id="pain-val">4</span><span> / 10</span></div>
+        <div class="pain-label-badge" id="pain-label">약간 뻐근</div>
+      </div>
       <input type="range" min="1" max="10" value="4" id="pain-slider" oninput="updatePain(this.value)">
+      <div class="pain-num-markers" id="pain-markers">
+        <span class="pain-num-marker" onclick="setPainVal(1)">1</span>
+        <span class="pain-num-marker" onclick="setPainVal(2)">2</span>
+        <span class="pain-num-marker" onclick="setPainVal(3)">3</span>
+        <span class="pain-num-marker" onclick="setPainVal(4)" style="background:var(--navy);color:white;font-weight:700">4</span>
+        <span class="pain-num-marker" onclick="setPainVal(5)">5</span>
+        <span class="pain-num-marker" onclick="setPainVal(6)">6</span>
+        <span class="pain-num-marker" onclick="setPainVal(7)">7</span>
+        <span class="pain-num-marker" onclick="setPainVal(8)">8</span>
+        <span class="pain-num-marker" onclick="setPainVal(9)">9</span>
+        <span class="pain-num-marker" onclick="setPainVal(10)">10</span>
+      </div>
       <div class="pain-marks"><span>전혀 아프지 않음</span><span>참기 힘들 정도</span></div>
     </div>
 
@@ -668,39 +755,58 @@
   <div class="content">
     <!-- 고객 배너 -->
     <div class="patient-banner">
-      <div class="patient-avatar-lg" id="therapist-avatar">김</div>
+      <div class="patient-avatar-lg" id="therapist-avatar">김민</div>
       <div class="patient-info-main">
+        <div style="font-size:11px;opacity:0.65;margin-bottom:3px;font-weight:500">오늘의 고객</div>
         <h2 id="therapist-patient-name">김민서 님</h2>
-        <p id="therapist-patient-sub">45세 · 010-1234-5678</p>
+        <p id="therapist-patient-sub" style="display:none">45세 · 010-1234-5678</p>
       </div>
       <div class="patient-stats">
         <div class="patient-stat">
-          <div class="num" id="therapist-visit-num">5</div>
-          <div class="lbl">회차</div>
+          <div class="lbl">방문 회차</div>
+          <div class="num" id="therapist-visit-num">5회차</div>
         </div>
         <div class="patient-stat-divider"></div>
         <div class="patient-stat">
-          <div class="num">60분</div>
           <div class="lbl">시술 코스</div>
+          <div class="num" id="therapist-course">전신 관리·60분</div>
         </div>
       </div>
     </div>
 
     <!-- 고객 컨디션 요약 -->
     <div class="condition-summary">
-      <h3>🗒 고객 입력 · 오늘 컨디션 요약</h3>
-      <div class="condition-chips" id="condition-chips">
-        <div class="condition-chip chip-pain">불편 부위: <strong>어깨</strong></div>
-        <div class="condition-chip chip-level">통증: <strong>7/10 아픔</strong></div>
-        <div class="condition-chip chip-hospital">진단: <strong>입력 없음</strong></div>
+      <div class="condition-summary-title">
+        <span class="condition-badge">고객 입력</span>오늘 컨디션 요약
       </div>
-      <div style="margin-top:12px;font-size:13px;color:var(--text-muted);line-height:1.6;" id="condition-detail"></div>
+      <div class="condition-table">
+        <div class="condition-row">
+          <span class="condition-key">불편 부위·통증</span>
+          <div class="condition-val" id="cond-pain">
+            <span class="condition-chip chip-pain">어깨</span>
+            <span class="condition-chip chip-level">7/10 꽤 아픔</span>
+          </div>
+        </div>
+        <div class="condition-row">
+          <span class="condition-key">진단 기록</span>
+          <span class="condition-val" id="cond-hospital">입력 없음</span>
+        </div>
+        <div class="condition-row">
+          <span class="condition-key">복용 약·치료</span>
+          <span class="condition-val" id="cond-medication">입력 없음</span>
+        </div>
+        <div class="condition-row">
+          <span class="condition-key">최근 특이사항</span>
+          <span class="condition-val" id="cond-special">입력 없음</span>
+        </div>
+      </div>
     </div>
 
     <!-- 신체 부위별 긴장도 -->
     <div class="card" style="margin-bottom:16px">
       <div class="card-header"><h3>① 신체 부위별 긴장도</h3><p>오늘 만져본 느낌으로 각 부위의 상태를 골라주세요</p></div>
       <div style="padding:0 20px">
+        <div class="tension-col-header"><span>부위</span><span>긴장도</span></div>
         <div class="tension-table">
           <div class="tension-row">
             <div class="tension-label">목</div>
@@ -747,23 +853,54 @@
     </div>
 
     <!-- 소견 메모 -->
-    <div class="card" style="margin-bottom:16px">
-      <div class="card-header"><h3>② 오늘 시술 특이사항</h3></div>
-      <div style="padding:16px 20px">
-        <textarea id="therapist-notes" rows="3" placeholder="오늘 시술하면서 특별히 느낀 점이나 고객이 말씀하신 내용을 기록해주세요"></textarea>
+    <div class="intake-section" style="margin-bottom:16px">
+      <div class="section-num-title">
+        <div class="section-num">2</div>
+        <div class="section-title-wrap">
+          <h3>오늘 시술 특이사항</h3>
+          <p>시술 중 발견한 점, 고객 반응, 특별히 조심한 부위 등을 적어주세요</p>
+        </div>
+      </div>
+      <textarea id="therapist-notes" rows="3" placeholder="예: 오른쪽 승모근에 심한 결절 발견, 좌측 견갑골 주변 근막 유착 확인, 압력 중강도로 진행"></textarea>
+      <div class="quick-tags" style="margin-top:10px">
+        <span style="font-size:11px;color:var(--text-muted);padding:5px 6px">빠른 입력</span>
+        <span class="quick-tag" onclick="addTag('therapist-notes','근결절 발견')">+ 근결절 발견</span>
+        <span class="quick-tag" onclick="addTag('therapist-notes','근막 유착')">+ 근막 유착</span>
+        <span class="quick-tag" onclick="addTag('therapist-notes','부종 있음')">+ 부종 있음</span>
+        <span class="quick-tag" onclick="addTag('therapist-notes','고객 압력 조절 요청')">+ 고객 압력 조절 요청</span>
+        <span class="quick-tag" onclick="addTag('therapist-notes','수면 유도 효과')">+ 수면 유도 효과</span>
+        <span class="quick-tag" onclick="addTag('therapist-notes','통증 호전')">+ 통증 호전</span>
       </div>
     </div>
-    <div class="card" style="margin-bottom:16px">
-      <div class="card-header"><h3>③ 다음 방문 때 집중할 부위 · 추천</h3></div>
-      <div style="padding:16px 20px">
-        <textarea id="next-care" rows="2" placeholder="다음 케어 때 집중해야 할 부위나 방향을 메모해주세요"></textarea>
+
+    <div class="intake-section" style="margin-bottom:16px">
+      <div class="section-num-title">
+        <div class="section-num">3</div>
+        <div class="section-title-wrap">
+          <h3>다음 방문 때 집중할 부위</h3>
+          <p>다음 번 시술 때 중점적으로 봐야 할 부위와 방향을 남겨주세요</p>
+        </div>
+      </div>
+      <textarea id="next-care" rows="3" placeholder="예: 우측 승모근 지속 관리 필요, 견갑골 주변 이완 집중, 자세 교정 스트레칭 안내"></textarea>
+      <div class="quick-tags" style="margin-top:10px">
+        <span style="font-size:11px;color:var(--text-muted);padding:5px 6px">빠른 입력</span>
+        <span class="quick-tag" onclick="addTag('next-care','승모근 집중')">+ 승모근 집중</span>
+        <span class="quick-tag" onclick="addTag('next-care','견갑골 이완')">+ 견갑골 이완</span>
+        <span class="quick-tag" onclick="addTag('next-care','자세 교정')">+ 자세 교정</span>
+        <span class="quick-tag" onclick="addTag('next-care','스트레칭 안내')">+ 스트레칭 안내</span>
+        <span class="quick-tag" onclick="addTag('next-care','경과 관찰')">+ 경과 관찰</span>
+        <span class="quick-tag" onclick="addTag('next-care','강도 낮추기')">+ 강도 낮추기</span>
+      </div>
+      <div class="save-notice">
+        <span>ⓘ</span>
+        <span>저장된 내용은 다음 방문 때 바로 확인하실 수 있고, 원장님과 고객 케어 이력에 함께 기록돼요.</span>
       </div>
     </div>
 
     <div class="therapist-footer">
       <button class="btn-save-draft" onclick="saveDraft()">임시 저장</button>
       <button class="btn-save-main" onclick="saveAndGenerateReport()">
-        ✓ 저장하고 AI 리포트 생성하기
+        ✓ 저장하기
       </button>
     </div>
   </div>
@@ -1065,15 +1202,14 @@ async function openTherapistNote(customerId) {
   document.getElementById('therapist-visit-num').textContent = visitNum + '회차';
 
   const intake = currentVisit;
-  const chips = document.getElementById('condition-chips');
   if (intake && intake.pain_area) {
-    chips.innerHTML = `
-      <div class="condition-chip chip-pain">불편 부위: <strong>${intake.pain_area}</strong></div>
-      <div class="condition-chip chip-level">통증: <strong>${intake.pain_level||'-'}/10</strong></div>
-      <div class="condition-chip chip-hospital">진단: <strong>${intake.hospital_record||'입력 없음'}</strong></div>`;
-    const detail = document.getElementById('condition-detail');
-    if (intake.medication) detail.innerHTML += `<div>💊 복용/치료: ${intake.medication}</div>`;
-    if (intake.special_notes) detail.innerHTML += `<div>📝 특이사항: ${intake.special_notes}</div>`;
+    const lvl = parseInt(intake.pain_level || 0);
+    const lvlLabel = painLabels[lvl] || '';
+    document.getElementById('cond-pain').innerHTML =
+      `<span class="condition-chip chip-pain">${intake.pain_area}</span><span class="condition-chip chip-level">${lvl}/10 ${lvlLabel}</span>`;
+    document.getElementById('cond-hospital').textContent = intake.hospital_record || '입력 없음';
+    document.getElementById('cond-medication').textContent = intake.medication || '입력 없음';
+    document.getElementById('cond-special').textContent = intake.special_notes || '입력 없음';
   }
   tensionData = { neck:null, shoulder:null, back:null, pelvis:null, legs:null };
   showScreen('therapist');
@@ -1092,10 +1228,28 @@ function selectBody(part) {
   document.querySelector('.progress-text').textContent = '2/5 완료';
 }
 
-const painLabels = ['','거의 없음','약간 불편','살짝 아픔','약간 아픔','약간 뻐근','뻐근함','꽤 아픔','많이 아픔','매우 아픔','참기 힘듦'];
+const painLabels = ['','거의 없음','약간 불편','살짝 아픔','약간 아픔','약간 뻐근','뻐근함','꽤 아픔','많이 아픔','매우 심함','참기 힘듦'];
 function updatePain(val) {
-  document.getElementById('pain-val').textContent = val;
-  document.getElementById('pain-label').textContent = painLabels[val] || '';
+  val = parseInt(val);
+  const color = val <= 3 ? 'var(--teal)' : val <= 6 ? 'var(--accent)' : 'var(--danger)';
+  const bgColor = val <= 3 ? 'var(--teal-light)' : val <= 6 ? 'var(--accent-light)' : 'var(--danger-light)';
+  const dispEl = document.getElementById('pain-val');
+  dispEl.textContent = val;
+  dispEl.parentElement.style.color = color;
+  const labelEl = document.getElementById('pain-label');
+  labelEl.textContent = painLabels[val] || '';
+  labelEl.style.background = bgColor;
+  labelEl.style.color = color;
+  document.querySelectorAll('.pain-num-marker').forEach(m => {
+    const isActive = parseInt(m.textContent) === val;
+    m.style.background = isActive ? 'var(--navy)' : '';
+    m.style.color = isActive ? 'white' : '';
+    m.style.fontWeight = isActive ? '700' : '';
+  });
+}
+function setPainVal(val) {
+  document.getElementById('pain-slider').value = val;
+  updatePain(val);
 }
 
 function addTag(fieldId, text) {
@@ -1360,6 +1514,7 @@ function showToast(msg, type='') {
 
 // 초기화
 initDates();
+updatePain(4);
 </script>
 </body>
 </html>
