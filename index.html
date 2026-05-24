@@ -106,8 +106,23 @@
 
   /* 고객 테이블 */
   .customer-table { width: 100%; }
-  .table-head { display: grid; grid-template-columns: 2fr 1fr 1.2fr 1.5fr 1.5fr; padding: 10px 20px; background: var(--gray-light); font-size: 12px; color: var(--text-muted); font-weight: 600; }
-  .table-row { display: grid; grid-template-columns: 2fr 1fr 1.2fr 1.5fr 1.5fr; padding: 14px 20px; border-bottom: 1px solid var(--border); align-items: center; cursor: pointer; transition: background 0.15s; }
+  .table-head { display: grid; grid-template-columns: 2fr 1fr 1.2fr 1.5fr 1.5fr 100px; padding: 10px 20px; background: var(--gray-light); font-size: 12px; color: var(--text-muted); font-weight: 600; }
+  .table-row { display: grid; grid-template-columns: 2fr 1fr 1.2fr 1.5fr 1.5fr 100px; padding: 14px 20px; border-bottom: 1px solid var(--border); align-items: center; cursor: pointer; transition: background 0.15s; }
+  .intake-link-btn { padding: 5px 10px; background: var(--teal-light); color: var(--teal); border: 1.5px solid var(--teal); border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+  .intake-link-btn:hover { background: var(--teal); color: white; }
+  /* 모달 */
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .modal-card { background: white; border-radius: var(--radius-lg); padding: 32px; width: 100%; max-width: 480px; box-shadow: var(--shadow-lg); position: relative; }
+  .modal-title { font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+  .modal-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+  .modal-link-box { background: var(--gray-light); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 13px; color: var(--primary); word-break: break-all; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .modal-copy-btn { padding: 6px 12px; background: var(--primary); color: white; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; flex-shrink: 0; }
+  .modal-msg-label { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
+  .modal-msg-box { background: var(--gray-light); border-radius: var(--radius-sm); padding: 14px; font-size: 13px; line-height: 1.7; color: var(--text); white-space: pre-wrap; margin-bottom: 16px; max-height: 180px; overflow-y: auto; }
+  .modal-actions { display: flex; gap: 10px; }
+  .modal-btn-copy { flex: 1; padding: 12px; background: var(--primary); color: white; border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 700; cursor: pointer; }
+  .modal-btn-close { padding: 12px 20px; border: 1.5px solid var(--border); background: white; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; color: var(--text-muted); }
+  .modal-close-x { position: absolute; top: 16px; right: 20px; background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted); line-height: 1; }
   .table-row:hover { background: var(--primary-light); }
   .customer-info { display: flex; align-items: center; gap: 10px; }
   .customer-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: white; flex-shrink: 0; }
@@ -484,6 +499,7 @@
               <span>마지막 방문</span>
               <span>주요 증상</span>
               <span>다음 예약</span>
+              <span>문진</span>
             </div>
           <div id="customer-list"></div>
         </div>
@@ -934,7 +950,7 @@
     </div>
     <div class="header-right">
       <span class="header-date" id="report-date-display"></span>
-      <button style="padding:6px 14px;border:1.5px solid var(--border);background:white;border-radius:8px;font-size:13px;cursor:pointer;" onclick="showScreen('dashboard')">리포트 공유</button>
+      <button style="padding:8px 16px;background:var(--primary);color:white;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px" onclick="sendReportLink()">📤 리포트 링크 발송</button>
     </div>
   </div>
   <div class="content">
@@ -1020,6 +1036,44 @@
     <div class="report-footer-btns">
       <button class="btn-outline" onclick="showScreen('dashboard')">리포트 저장</button>
       <button class="btn-book" onclick="alert('예약 기능은 준비 중입니다')">다음 예약하기 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- 리포트 링크 모달 -->
+<div class="modal-backdrop" id="report-modal" style="display:none" onclick="if(event.target===this)closeReportModal()">
+  <div class="modal-card">
+    <button class="modal-close-x" onclick="closeReportModal()">✕</button>
+    <div class="modal-title">📤 케어 리포트 링크 발송</div>
+    <div class="modal-sub" id="report-modal-sub">고객에게 케어 리포트 링크를 전송합니다</div>
+    <div class="modal-link-box">
+      <span id="report-modal-link" style="flex:1;font-size:12px"></span>
+      <button class="modal-copy-btn" onclick="copyReportLink()">복사</button>
+    </div>
+    <div class="modal-msg-label">📱 문자 메시지 템플릿</div>
+    <div class="modal-msg-box" id="report-modal-msg"></div>
+    <div class="modal-actions">
+      <button class="modal-btn-copy" onclick="copyReportMsg()">📋 문자 내용 복사</button>
+      <button class="modal-btn-close" onclick="closeReportModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 문진 링크 모달 -->
+<div class="modal-backdrop" id="link-modal" style="display:none" onclick="if(event.target===this)closeLinkModal()">
+  <div class="modal-card">
+    <button class="modal-close-x" onclick="closeLinkModal()">✕</button>
+    <div class="modal-title">📋 문진 링크 발송</div>
+    <div class="modal-sub" id="modal-sub">고객에게 방문 전 문진 링크를 발송합니다</div>
+    <div class="modal-link-box">
+      <span id="modal-link-text" style="flex:1;font-size:12px"></span>
+      <button class="modal-copy-btn" onclick="copyModalLink()">복사</button>
+    </div>
+    <div class="modal-msg-label">📱 문자 메시지 템플릿</div>
+    <div class="modal-msg-box" id="modal-msg"></div>
+    <div class="modal-actions">
+      <button class="modal-btn-copy" onclick="copyModalMsg()">📋 문자 내용 복사</button>
+      <button class="modal-btn-close" onclick="closeLinkModal()">닫기</button>
     </div>
   </div>
 </div>
@@ -1181,6 +1235,9 @@ function renderCustomerList(customers) {
       <div style="font-size:13px;color:var(--text-muted)">${d.lastDate}<br><span style="font-size:11px">${d.daysAgo}일 전</span></div>
       <div><span class="symptom-tag" style="background:${d.symBg};color:${d.symFg}">${d.sym}</span></div>
       <div>${apptCell}</div>
+      <div onclick="event.stopPropagation()">
+        <button class="intake-link-btn" onclick="sendIntakeLink({name:'${d.name}',phone:'${d.phone}'})">📋 문진 링크</button>
+      </div>
     </div>`;
   }).join('');
 }
@@ -1544,6 +1601,118 @@ function filterCustomersTab(type) {
 }
 
 // ══════════════════════════════════════════════
+// 리포트 링크 발송
+// ══════════════════════════════════════════════
+let _reportLink = '';
+let _reportMsg = '';
+
+function sendReportLink() {
+  if (!currentCustomer) { showToast('고객 정보가 없습니다', 'error'); return; }
+  const baseUrl = 'https://touch-care.vercel.app';
+  const visitId = currentVisit ? currentVisit.id : '';
+  const link = `${baseUrl}?report=${currentCustomer.id}${visitId ? '&visit=' + visitId : ''}`;
+  _reportLink = link;
+  _reportMsg = `[천지안마원] ${currentCustomer.name}님 오늘 케어 리포트가 준비됐어요 😊\n\n아래 링크에서 확인하세요:\n${link}\n\n다음 방문 추천일도 확인하실 수 있어요!`;
+
+  navigator.clipboard.writeText(link).catch(() => {});
+  showReportLinkModal();
+}
+
+function showReportLinkModal() {
+  document.getElementById('report-modal-sub').textContent =
+    `${currentCustomer.name}님 (${currentCustomer.phone || '-'})께 리포트 링크를 발송합니다`;
+  document.getElementById('report-modal-link').textContent = _reportLink;
+  document.getElementById('report-modal-msg').textContent = _reportMsg;
+  document.getElementById('report-modal').style.display = 'flex';
+}
+
+function closeReportModal() {
+  document.getElementById('report-modal').style.display = 'none';
+}
+
+function copyReportLink() {
+  navigator.clipboard.writeText(_reportLink)
+    .then(() => showToast('리포트 링크가 복사됐어요!', 'success'))
+    .catch(() => {
+      const el = document.getElementById('report-modal-link');
+      const range = document.createRange(); range.selectNode(el);
+      window.getSelection().removeAllRanges(); window.getSelection().addRange(range);
+      document.execCommand('copy');
+      showToast('리포트 링크가 복사됐어요!', 'success');
+    });
+}
+
+function copyReportMsg() {
+  navigator.clipboard.writeText(_reportMsg)
+    .then(() => { showToast('문자 내용이 복사됐어요! 붙여넣기 후 전송하세요 📱', 'success'); closeReportModal(); })
+    .catch(() => {
+      const el = document.getElementById('report-modal-msg');
+      const range = document.createRange(); range.selectNode(el);
+      window.getSelection().removeAllRanges(); window.getSelection().addRange(range);
+      document.execCommand('copy');
+      showToast('문자 내용이 복사됐어요!', 'success');
+      closeReportModal();
+    });
+}
+
+// ══════════════════════════════════════════════
+// 문진 링크 발송
+// ══════════════════════════════════════════════
+let _modalLink = '';
+let _modalMsg = '';
+
+function sendIntakeLink(customer) {
+  const baseUrl = 'https://touch-care.vercel.app';
+  const link = `${baseUrl}?phone=${encodeURIComponent(customer.phone)}`;
+  _modalLink = link;
+  _modalMsg = `[TouchCare 천지안마원]\n안녕하세요, ${customer.name}님 😊\n\n방문 전 건강 정보를 미리 입력해주시면\n원장님이 더 꼼꼼하게 케어해드릴 수 있어요.\n\n아래 링크를 클릭해 주세요 👇\n${link}\n\n방문 예약 시간에 뵙겠습니다 🙏\n- 천지안마원 드림`;
+
+  // 클립보드 복사 (링크)
+  navigator.clipboard.writeText(link).catch(() => {});
+  showLinkModal(customer, link);
+}
+
+function showLinkModal(customer, link) {
+  document.getElementById('modal-sub').textContent = `${customer.name}님 (${customer.phone})께 문진 링크를 발송합니다`;
+  document.getElementById('modal-link-text').textContent = link;
+  document.getElementById('modal-msg').textContent = _modalMsg;
+  document.getElementById('link-modal').style.display = 'flex';
+}
+
+function closeLinkModal() {
+  document.getElementById('link-modal').style.display = 'none';
+}
+
+function copyModalLink() {
+  navigator.clipboard.writeText(_modalLink)
+    .then(() => showToast('링크가 복사됐어요!', 'success'))
+    .catch(() => {
+      const el = document.getElementById('modal-link-text');
+      const range = document.createRange();
+      range.selectNode(el);
+      window.getSelection().removeAllRanges();
+      window.getSelection().addRange(range);
+      document.execCommand('copy');
+      showToast('링크가 복사됐어요!', 'success');
+    });
+}
+
+function copyModalMsg() {
+  navigator.clipboard.writeText(_modalMsg)
+    .then(() => { showToast('문자 내용이 복사됐어요! 붙여넣기 후 전송하세요 📱', 'success'); closeLinkModal(); })
+    .catch(() => {
+      const el = document.getElementById('modal-msg');
+      const range = document.createRange();
+      range.selectNode(el);
+      window.getSelection().removeAllRanges();
+      window.getSelection().addRange(range);
+      document.execCommand('copy');
+      showToast('문자 내용이 복사됐어요!', 'success');
+      closeLinkModal();
+    });
+}
+
+// ══════════════════════════════════════════════
 // 유틸
 // ══════════════════════════════════════════════
 function showToast(msg, type='') {
@@ -1558,27 +1727,41 @@ function showToast(msg, type='') {
 initDates();
 updatePain(4);
 
-// ── URL 파라미터 자동 인증
+// ── URL 파라미터 자동 처리
 (async () => {
   const params = new URLSearchParams(window.location.search);
+  const reportCustomerId = params.get('report');
+  const visitId = params.get('visit');
   const token = params.get('token');
   const phone = params.get('phone');
 
+  // ── 리포트 직접 열기
+  if (reportCustomerId) {
+    const { data: customer } = await db.from('customers').select('*').eq('id', reportCustomerId).single();
+    if (customer) {
+      currentCustomer = customer;
+      if (visitId) {
+        const { data: visit } = await db.from('visits').select('*').eq('id', visitId).single();
+        currentVisit = visit || null;
+      }
+      showScreen('report');
+      return;
+    }
+    showToast('리포트를 불러올 수 없습니다.', 'error');
+    return;
+  }
+
+  // ── 문진 자동 인증 (phone / token)
   if (!token && !phone) return;
 
   switchLoginTab('customer');
+  if (phone) document.getElementById('customer-phone').value = phone;
 
-  if (phone) {
-    document.getElementById('customer-phone').value = phone;
-  }
-
-  // token이 있으면 customers 테이블에서 token 컬럼으로 조회
   let customer = null;
   if (token) {
     const { data } = await db.from('customers').select('*').eq('token', token).single();
     customer = data;
   }
-  // token 조회 실패 시 phone으로 시도
   if (!customer && phone) {
     const { data } = await db.from('customers').select('*').eq('phone', phone).single();
     customer = data;
@@ -1588,7 +1771,6 @@ updatePain(4);
     currentCustomer = customer;
     showScreen('intake');
   } else {
-    // 고객 없음 → 이름 + 전화번호 입력 폼 표시 (이미 phone 채워진 상태)
     showToast('예약 정보를 확인할 수 없습니다. 이름을 입력해주세요.', 'error');
     document.getElementById('customer-name').focus();
   }
