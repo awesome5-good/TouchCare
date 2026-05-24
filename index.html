@@ -59,8 +59,7 @@
   #screen-login { background: linear-gradient(135deg, var(--navy) 0%, var(--primary-dark) 100%); align-items: center; justify-content: center; }
   .login-card { background: white; border-radius: var(--radius-lg); padding: 48px 40px; width: 400px; box-shadow: var(--shadow-lg); }
   .login-logo { text-align: center; margin-bottom: 32px; }
-  .login-logo .logo-big { width: 64px; height: 64px; background: var(--primary); border-radius: 18px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
-  .login-logo .logo-big svg { width: 40px; height: 40px; fill: white; }
+  .login-logo .logo-big { width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
   .login-logo h2 { font-size: 24px; font-weight: 800; color: var(--primary); }
   .login-logo p { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
   .login-tabs { display: flex; background: var(--gray-light); border-radius: var(--radius-sm); padding: 4px; margin-bottom: 24px; }
@@ -290,6 +289,23 @@
   .toast.success { background: var(--success); }
   .toast.error { background: var(--danger); }
 
+  /* ── 탭 뷰 ── */
+  .dash-view { display: none; }
+  .dash-view.active { display: block; }
+  .tab-section-header { margin-bottom: 24px; }
+  .tab-section-header h2 { font-size: 24px; font-weight: 800; color: var(--text); }
+  .tab-section-header p { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+  .schedule-full-list { background: white; border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); overflow: hidden; }
+  .schedule-full-item { display: flex; gap: 16px; padding: 18px 24px; border-bottom: 1px solid var(--border); align-items: center; cursor: pointer; transition: background 0.15s; }
+  .schedule-full-item:last-child { border-bottom: none; }
+  .schedule-full-item:hover { background: var(--primary-light); }
+  .schedule-full-time { font-size: 16px; font-weight: 700; color: var(--text); width: 60px; flex-shrink: 0; }
+  .schedule-full-bar { width: 4px; border-radius: 2px; align-self: stretch; flex-shrink: 0; }
+  .schedule-full-info { flex: 1; }
+  .schedule-full-name { font-size: 16px; font-weight: 700; margin-bottom: 3px; }
+  .schedule-full-desc { font-size: 13px; color: var(--text-muted); }
+  .schedule-full-status { padding: 5px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; }
+
   /* 반응형 */
   @media (max-width: 768px) {
     .stats-grid { grid-template-columns: repeat(2, 1fr); }
@@ -309,7 +325,7 @@
   <div class="login-card">
     <div class="login-logo">
       <div class="logo-big">
-        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        <img src="logo.png" style="width:48px;height:48px;object-fit:contain">
       </div>
       <h2>TouchCare</h2>
       <p>천지안마원 케어 관리 시스템</p>
@@ -332,11 +348,15 @@
     </div>
     <div id="login-customer-form" style="display:none">
       <div class="form-group">
+        <label>이름</label>
+        <input type="text" id="customer-name" placeholder="홍길동">
+      </div>
+      <div class="form-group">
         <label>예약 전화번호</label>
         <input type="tel" id="customer-phone" placeholder="010-1234-5678" value="010-1234-5678">
       </div>
       <button class="btn-primary" onclick="loginCustomer()">오늘 방문 전 입력하기</button>
-      <div class="login-hint">예약하신 전화번호로 본인 확인 후 방문 전 건강 정보를 입력합니다</div>
+      <div class="login-hint">예약하신 이름과 전화번호로 본인 확인 후 방문 전 건강 정보를 입력합니다</div>
     </div>
   </div>
 </div>
@@ -348,17 +368,17 @@
   <div class="header">
     <div class="logo">
       <div class="logo-icon">
-        <img src="logo.png" width="36" height="36" alt="TouchCare Logo">
+        <img src="logo.png" style="width:36px;height:36px;object-fit:contain;border-radius:8px">
       </div>
       <div class="logo-text">
         <h1>TouchCare</h1>
         <p>천지안마원 · 관리자 대시보드</p>
       </div>
     </div>
-    <div class="header-nav">
-      <button class="nav-btn active">대시보드</button>
-      <button class="nav-btn">예약 관리</button>
-      <button class="nav-btn">고객</button>
+    <div class="header-nav" id="dash-nav">
+      <button class="nav-btn active" onclick="showDashTab('main',this)">대시보드</button>
+      <button class="nav-btn" onclick="showDashTab('schedule',this)">예약 관리</button>
+      <button class="nav-btn" onclick="showDashTab('customers',this)">고객</button>
       <button class="nav-btn">진료 기록</button>
       <button class="nav-btn">정산</button>
       <button class="nav-btn">설정</button>
@@ -369,50 +389,104 @@
     </div>
   </div>
   <div class="content">
-    <div class="dashboard-title">
-      <h2>안녕하세요, 김기화 원장님 👋</h2>
-      <p id="dash-subtitle"></p>
-    </div>
-    <div class="stats-grid">
-      <div class="stat-card primary">
-        <div class="stat-icon">📅</div>
-        <div class="stat-num" id="stat-total">0</div>
-        <div class="stat-label">오늘 예약 총 건수</div>
-        <div class="stat-badge">▲ 3건 어제보다</div>
+    <!-- 대시보드 메인 탭 -->
+    <div class="dash-view active" id="dash-view-main">
+      <div class="dashboard-title">
+        <h2>안녕하세요, 김기화 원장님 👋</h2>
+        <p id="dash-subtitle"></p>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon" style="background:var(--success-light);font-size:18px;">✓</div>
-        <div class="stat-num" id="stat-done" style="color:var(--success)">0</div>
-        <div class="stat-label">완료</div>
-        <div class="stat-sub" id="stat-done-pct">진행률 0%</div>
+      <div class="stats-grid">
+        <div class="stat-card primary">
+          <div class="stat-icon">📅</div>
+          <div class="stat-num" id="stat-total">0</div>
+          <div class="stat-label">오늘 예약 총 건수</div>
+          <div class="stat-badge">▲ 3건 어제보다</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:var(--success-light);font-size:18px;">✓</div>
+          <div class="stat-num" id="stat-done" style="color:var(--success)">0</div>
+          <div class="stat-label">완료</div>
+          <div class="stat-sub" id="stat-done-pct">진행률 0%</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:var(--accent-light);font-size:18px;">⏱</div>
+          <div class="stat-num" id="stat-wait" style="color:var(--accent)">0</div>
+          <div class="stat-label">대기</div>
+          <div class="stat-sub" id="stat-next-appt">다음 예약 -</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#fde8e6;font-size:18px;">♡</div>
+          <div class="stat-num" id="stat-new" style="color:var(--danger)">0</div>
+          <div class="stat-label">금일 신규 고객</div>
+          <div class="stat-sub">첫 방문 환영 메시지 발송 완료</div>
+        </div>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon" style="background:var(--accent-light);font-size:18px;">⏱</div>
-        <div class="stat-num" id="stat-wait" style="color:var(--accent)">0</div>
-        <div class="stat-label">대기</div>
-        <div class="stat-sub" id="stat-next-appt">다음 예약 -</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon" style="background:#fde8e6;font-size:18px;">♡</div>
-        <div class="stat-num" id="stat-new" style="color:var(--danger)">0</div>
-        <div class="stat-label">금일 신규 고객</div>
-        <div class="stat-sub">첫 방문 환영 메시지 발송 완료</div>
-      </div>
-    </div>
-    <div class="main-grid">
-      <div class="card">
-        <div class="card-header">
-          <div>
-            <h3>고객 목록</h3>
-            <p id="customer-count-label">전체 0명 · 이번 달 방문 0명</p>
+      <div class="main-grid">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h3>고객 목록</h3>
+              <p id="customer-count-label">전체 0명 · 이번 달 방문 0명</p>
+            </div>
+            <div class="card-filter">
+              <button class="filter-btn active" onclick="filterCustomers('all')">전체</button>
+              <button class="filter-btn" onclick="filterCustomers('vip')">단골</button>
+              <button class="filter-btn" onclick="filterCustomers('new')">신규</button>
+              <button class="filter-btn" onclick="filterCustomers('inactive')">휴면</button>
+            </div>
           </div>
-          <div class="card-filter">
-            <button class="filter-btn active" onclick="filterCustomers('all')">전체</button>
-            <button class="filter-btn" onclick="filterCustomers('vip')">단골</button>
-            <button class="filter-btn" onclick="filterCustomers('new')">신규</button>
-            <button class="filter-btn" onclick="filterCustomers('inactive')">휴면</button>
+          <div class="customer-table">
+            <div class="table-head">
+              <span>고객</span>
+              <span>방문 횟수</span>
+              <span>마지막 방문</span>
+              <span>주요 증상</span>
+              <span>다음 예약</span>
+            </div>
+            <div id="customer-list"></div>
           </div>
         </div>
+        <div>
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-header"><h3>오늘의 일정</h3><a href="#" style="font-size:12px;color:var(--primary);text-decoration:none;" onclick="showDashTab('schedule',null);return false;">전체 보기</a></div>
+            <div class="schedule-list" id="schedule-list"></div>
+          </div>
+          <div class="card">
+            <div style="padding:16px">
+              <div class="alert-card">
+                <div class="alert-title">🔔 케어 알림</div>
+                <div class="alert-desc" id="alert-desc">3주 이상 방문이 없는 단골 고객이 있어요. 맞춤 메시지를 자동으로 작성해드려요.</div>
+                <button class="alert-btn">안부 메시지 보내기 →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 예약 관리 탭 -->
+    <div class="dash-view" id="dash-view-schedule">
+      <div class="tab-section-header">
+        <h2>📅 오늘의 예약 일정</h2>
+        <p id="schedule-tab-date"></p>
+      </div>
+      <div class="schedule-full-list" id="schedule-full-list"></div>
+    </div>
+
+    <!-- 고객 탭 -->
+    <div class="dash-view" id="dash-view-customers">
+      <div class="tab-section-header" style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <h2>👥 전체 고객 목록</h2>
+          <p id="customers-tab-label">전체 0명</p>
+        </div>
+        <div class="card-filter">
+          <button class="filter-btn active" onclick="filterCustomersTab('all')">전체</button>
+          <button class="filter-btn" onclick="filterCustomersTab('vip')">단골</button>
+          <button class="filter-btn" onclick="filterCustomersTab('new')">신규</button>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px">
         <div class="customer-table">
           <div class="table-head">
             <span>고객</span>
@@ -421,22 +495,7 @@
             <span>주요 증상</span>
             <span>다음 예약</span>
           </div>
-          <div id="customer-list"></div>
-        </div>
-      </div>
-      <div>
-        <div class="card" style="margin-bottom:16px">
-          <div class="card-header"><h3>오늘의 일정</h3><a href="#" style="font-size:12px;color:var(--primary);text-decoration:none;">전체 보기</a></div>
-          <div class="schedule-list" id="schedule-list"></div>
-        </div>
-        <div class="card">
-          <div style="padding:16px">
-            <div class="alert-card">
-              <div class="alert-title">🔔 케어 알림</div>
-              <div class="alert-desc" id="alert-desc">3주 이상 방문이 없는 단골 고객이 있어요. 맞춤 메시지를 자동으로 작성해드려요.</div>
-              <button class="alert-btn">안부 메시지 보내기 →</button>
-            </div>
-          </div>
+          <div id="customer-list-full"></div>
         </div>
       </div>
     </div>
@@ -449,7 +508,7 @@
 <div id="screen-intake" class="screen">
   <div class="header">
     <div class="logo">
-      <div class="logo-icon"><img src="logo.png" width="36" height="36" alt="TouchCare Logo"></div>
+      <div class="logo-icon"><img src="logo.png" style="width:36px;height:36px;object-fit:contain;border-radius:8px"></div>
       <div class="logo-text"><h1>TouchCare</h1><p>천지안마원 · 방문 전 문진</p></div>
     </div>
     <div class="header-right">
@@ -566,7 +625,7 @@
 <div id="screen-therapist" class="screen">
   <div class="header">
     <div class="logo">
-      <div class="logo-icon"><img src="logo.png" width="36" height="36" alt="TouchCare Logo"></div>
+      <div class="logo-icon"><img src="logo.png" style="width:36px;height:36px;object-fit:contain;border-radius:8px"></div>
       <div class="logo-text"><h1>TouchCare</h1><p>안마사 소견 입력</p></div>
     </div>
     <div class="header-right">
@@ -684,7 +743,7 @@
 <div id="screen-report" class="screen">
   <div class="header">
     <div class="logo">
-      <div class="logo-icon"><img src="logo.png" width="36" height="36" alt="TouchCare Logo"></div>
+      <div class="logo-icon"><img src="logo.png" style="width:36px;height:36px;object-fit:contain;border-radius:8px"></div>
       <div class="logo-text"><h1>TouchCare</h1><p>천지안마원 · AI 케어 리포트</p></div>
     </div>
     <div class="header-right">
@@ -774,7 +833,7 @@
     <div class="report-footer-hint">다음 예약을 미리 잡으면 원하는 시간을 확보할 수 있어요</div>
     <div class="report-footer-btns">
       <button class="btn-outline" onclick="showScreen('dashboard')">리포트 저장</button>
-      <button class="btn-book" onclick="showScreen('dashboard')">다음 예약하기 →</button>
+      <button class="btn-book" onclick="alert('예약 기능은 준비 중입니다')">다음 예약하기 →</button>
     </div>
   </div>
 </div>
@@ -857,12 +916,15 @@ function loginTherapist() {
 
 async function loginCustomer() {
   const phone = document.getElementById('customer-phone').value.trim();
-  const { data } = await db.from('customers').select('*').eq('phone', phone).single();
+  const name = document.getElementById('customer-name').value.trim();
+  if (!name) { showToast('이름을 입력해주세요.', 'error'); return; }
+  if (!phone) { showToast('전화번호를 입력해주세요.', 'error'); return; }
+  const { data } = await db.from('customers').select('*').eq('phone', phone).eq('name', name).single();
   if (data) {
     currentCustomer = data;
     showScreen('intake');
   } else {
-    showToast('예약 정보를 찾을 수 없습니다. 전화번호를 확인해주세요.', 'error');
+    showToast('예약 정보를 찾을 수 없습니다. 이름과 전화번호를 확인해주세요.', 'error');
   }
 }
 
@@ -1171,6 +1233,99 @@ function renderChart(visits) {
 function renderDemoReport() {
   // 이미 HTML에 데모 데이터 있음
   if (!currentVisit) renderChart([]);
+}
+
+// ══════════════════════════════════════════════
+// 탭 전환
+// ══════════════════════════════════════════════
+function showDashTab(tab, btnEl) {
+  document.querySelectorAll('.dash-view').forEach(v => v.classList.remove('active'));
+  document.getElementById('dash-view-' + tab).classList.add('active');
+
+  // nav 버튼 active 상태 업데이트
+  const navBtns = document.querySelectorAll('#dash-nav .nav-btn');
+  navBtns.forEach(b => b.classList.remove('active'));
+  if (btnEl) {
+    btnEl.classList.add('active');
+  } else {
+    // 전체 보기 링크 클릭 시 예약 관리 버튼 활성화
+    if (tab === 'schedule') navBtns[1].classList.add('active');
+    else if (tab === 'customers') navBtns[2].classList.add('active');
+    else navBtns[0].classList.add('active');
+  }
+
+  if (tab === 'schedule') renderScheduleFull();
+  if (tab === 'customers') renderCustomerListFull(allCustomers);
+}
+
+function renderScheduleFull() {
+  const now = new Date();
+  const el = document.getElementById('schedule-tab-date');
+  if (el) el.textContent = `${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 · 총 6건`;
+
+  const schedules = [
+    { time:'09:00', name:'김영희', desc:'전신 관리 · 60분', status:'done', color:'#2d8a4e' },
+    { time:'10:30', name:'오세준', desc:'척추 집중 · 90분', status:'done', color:'#2d8a4e' },
+    { time:'13:00', name:'윤지호', desc:'어깨·목 케어 · 45분', status:'active', color:'#1a6b8a' },
+    { time:'14:30', name:'김민서', desc:'전신 관리 · 60분', status:'wait', color:'#6b7a8d' },
+    { time:'16:00', name:'강하늘', desc:'하체 집중 · 60분', status:'wait', color:'#6b7a8d' },
+    { time:'17:30', name:'신예린', desc:'상담 + 전신 · 75분', status:'new', color:'#e8a020' },
+  ];
+  const statusMap = { done:'완료', active:'진행 중', wait:'대기', new:'신규' };
+  const classMap = { done:'status-done', active:'status-active', wait:'status-wait', new:'status-new' };
+  document.getElementById('schedule-full-list').innerHTML = schedules.map(s => `
+    <div class="schedule-full-item">
+      <div class="schedule-full-time">${s.time}</div>
+      <div class="schedule-full-bar" style="background:${s.color}"></div>
+      <div class="schedule-full-info">
+        <div class="schedule-full-name">${s.name}</div>
+        <div class="schedule-full-desc">${s.desc}</div>
+      </div>
+      <div class="schedule-full-status ${classMap[s.status]}">${statusMap[s.status]}</div>
+    </div>`).join('');
+}
+
+function renderCustomerListFull(customers) {
+  const labelEl = document.getElementById('customers-tab-label');
+  if (labelEl) labelEl.textContent = `전체 ${customers.length}명`;
+
+  const list = document.getElementById('customer-list-full');
+  if (!customers.length) {
+    list.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted)">고객 데이터가 없습니다</div>';
+    return;
+  }
+  const symptoms = ['어깨 결림','허리 통증','두통·목 결림','무릎 근육통','손목·팔 피로','종아리 부종','오십견','골반 통증'];
+  const tagColors = ['#fde8e6:#c0392b','#e6f5ec:#2d8a4e','#e8f4f8:#1a6b8a','#fef3e0:#e8a020','#f3e8ff:#9b59b6'];
+  list.innerHTML = customers.map((c, i) => {
+    const color = COLORS[i % COLORS.length];
+    const symptom = c.main_symptom || symptoms[i % symptoms.length];
+    const tc = tagColors[i % tagColors.length].split(':');
+    const visits = [38,12,64,7,3,21][i] || 1;
+    const dates = ['2026.04.18','2026.04.15','2026.04.21','2026.04.10','2026.04.19','2026.04.17'];
+    const appts = ['오늘 14:30','4월 26일 (일)','4월 28일 (화)','5월 2일 (토)','4월 25일 (토)','미예약'];
+    const apptClass = i===0?'appt-today':i<3?'appt-soon':i<5?'appt-normal':'appt-none';
+    return `<div class="table-row" onclick="openTherapistNote('${c.id}')">
+      <div class="customer-info">
+        <div class="customer-avatar" style="background:${color}">${c.name.substring(0,1)}</div>
+        <div>
+          <div class="customer-name">${c.name}${c.is_vip?'<span class="vip-badge">VIP</span>':''}</div>
+          <div class="customer-detail">${c.age || 40}세 · ${c.phone || '-'}</div>
+        </div>
+      </div>
+      <div class="visit-count">${visits}회</div>
+      <div style="font-size:13px;color:var(--text-muted)">${dates[i]||'-'}<br><span style="font-size:11px">${[5,8,2,13,4,6][i]}일 전</span></div>
+      <div><span class="symptom-tag" style="background:${tc[0]};color:${tc[1]}">${symptom}</span></div>
+      <div><span class="appt-badge ${apptClass}">${appts[i]||'-'}</span></div>
+    </div>`;
+  }).join('');
+}
+
+function filterCustomersTab(type) {
+  document.querySelectorAll('#dash-view-customers .filter-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  if (type === 'all') renderCustomerListFull(allCustomers);
+  else if (type === 'vip') renderCustomerListFull(allCustomers.filter(c => c.is_vip));
+  else renderCustomerListFull(allCustomers);
 }
 
 // ══════════════════════════════════════════════
