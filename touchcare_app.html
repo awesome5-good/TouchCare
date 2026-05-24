@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TouchCare — 천지안마원</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  :root {
+    --primary: #1a6b8a;
+    --primary-dark: #0d4f6b;
+    --primary-light: #e8f4f8;
+    --teal: #2ba0a0;
+    --teal-light: #e6f5f5;
+    --navy: #1a2a3a;
+    --navy-light: #2d4057;
+    --accent: #e8a020;
+    --accent-light: #fef3e0;
+    --success: #2d8a4e;
+    --success-light: #e6f5ec;
+    --danger: #c0392b;
+    --danger-light: #fde8e6;
+    --gray: #6b7a8d;
+    --gray-light: #f0f4f8;
+    --white: #ffffff;
+    --bg: #f5f7fa;
+    --border: #e0e8f0;
+    --text: #1a2a3a;
+    --text-muted: #6b7a8d;
+    --shadow: 0 2px 12px rgba(26, 107, 138, 0.08);
+    --shadow-lg: 0 8px 32px rgba(26, 107, 138, 0.15);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-lg: 20px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* ── 화면 전환 ── */
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ── 공통 헤더 ── */
+  .header { background: var(--white); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 64px; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow); }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
+  .logo-icon img { width: 36px; height: 36px; object-fit: contain; }
+  .logo-text h1 { font-size: 18px; font-weight: 700; color: var(--primary); letter-spacing: -0.3px; }
+  .logo-text p { font-size: 11px; color: var(--text-muted); }
+  .header-nav { display: flex; gap: 4px; }
+  .nav-btn { padding: 6px 14px; border: none; background: none; border-radius: var(--radius-sm); font-size: 14px; color: var(--text-muted); cursor: pointer; font-weight: 500; transition: all 0.2s; }
+  .nav-btn.active, .nav-btn:hover { background: var(--primary-light); color: var(--primary); }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .header-date { font-size: 13px; color: var(--text-muted); }
+  .avatar { width: 36px; height: 36px; background: var(--navy); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; font-weight: 700; cursor: pointer; }
+
+  /* ── 로그인 화면 ── */
+  #screen-login { background: linear-gradient(135deg, var(--navy) 0%, var(--primary-dark) 100%); align-items: center; justify-content: center; }
+  .login-card { background: white; border-radius: var(--radius-lg); padding: 48px 40px; width: 400px; box-shadow: var(--shadow-lg); }
+  .login-logo { text-align: center; margin-bottom: 32px; }
+  .login-logo .logo-big { width: 64px; height: 64px; background: var(--primary); border-radius: 18px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
+  .login-logo .logo-big svg { width: 40px; height: 40px; fill: white; }
+  .login-logo h2 { font-size: 24px; font-weight: 800; color: var(--primary); }
+  .login-logo p { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+  .login-tabs { display: flex; background: var(--gray-light); border-radius: var(--radius-sm); padding: 4px; margin-bottom: 24px; }
+  .login-tab { flex: 1; padding: 8px; text-align: center; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; color: var(--text-muted); transition: all 0.2s; }
+  .login-tab.active { background: white; color: var(--primary); box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .form-group input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 15px; color: var(--text); outline: none; transition: border-color 0.2s; }
+  .form-group input:focus { border-color: var(--primary); }
+  .btn-primary { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: var(--radius-sm); font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; margin-top: 8px; }
+  .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(26,107,138,0.3); }
+  .login-hint { text-align: center; margin-top: 16px; font-size: 12px; color: var(--text-muted); background: var(--gray-light); padding: 10px; border-radius: var(--radius-sm); }
+
+  /* ── 대시보드 ── */
+  #screen-dashboard .content { padding: 28px 32px; flex: 1; }
+  .dashboard-title { margin-bottom: 24px; }
+  .dashboard-title h2 { font-size: 26px; font-weight: 800; color: var(--text); }
+  .dashboard-title p { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .stat-card { background: white; border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); border: 1px solid var(--border); position: relative; overflow: hidden; }
+  .stat-card.primary { background: var(--primary); color: white; }
+  .stat-card .stat-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; font-size: 18px; }
+  .stat-card.primary .stat-icon { background: rgba(255,255,255,0.2); }
+  .stat-card:not(.primary) .stat-icon { background: var(--primary-light); }
+  .stat-card .stat-num { font-size: 32px; font-weight: 800; line-height: 1; margin-bottom: 6px; }
+  .stat-card .stat-label { font-size: 13px; opacity: 0.8; }
+  .stat-card .stat-sub { font-size: 12px; margin-top: 8px; opacity: 0.7; }
+  .stat-badge { display: inline-flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 20px; font-size: 12px; margin-top: 8px; }
+
+  .main-grid { display: grid; grid-template-columns: 1fr 340px; gap: 20px; }
+  .card { background: white; border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); overflow: hidden; }
+  .card-header { padding: 18px 20px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .card-header h3 { font-size: 16px; font-weight: 700; }
+  .card-header p { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .card-filter { display: flex; gap: 6px; }
+  .filter-btn { padding: 4px 12px; border-radius: 20px; font-size: 12px; border: 1.5px solid var(--border); background: white; cursor: pointer; color: var(--text-muted); transition: all 0.2s; }
+  .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+  /* 고객 테이블 */
+  .customer-table { width: 100%; }
+  .table-head { display: grid; grid-template-columns: 2fr 1fr 1.2fr 1.5fr 1.5fr; padding: 10px 20px; background: var(--gray-light); font-size: 12px; color: var(--text-muted); font-weight: 600; }
+  .table-row { display: grid; grid-template-columns: 2fr 1fr 1.2fr 1.5fr 1.5fr; padding: 14px 20px; border-bottom: 1px solid var(--border); align-items: center; cursor: pointer; transition: background 0.15s; }
+  .table-row:hover { background: var(--primary-light); }
+  .customer-info { display: flex; align-items: center; gap: 10px; }
+  .customer-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: white; flex-shrink: 0; }
+  .customer-name { font-size: 14px; font-weight: 600; }
+  .customer-detail { font-size: 12px; color: var(--text-muted); }
+  .vip-badge { display: inline-block; background: #fff3cd; color: #856404; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-left: 4px; }
+  .visit-count { font-size: 15px; font-weight: 700; color: var(--primary); }
+  .symptom-tag { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+  .appt-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+  .appt-today { background: var(--danger); color: white; }
+  .appt-soon { background: var(--primary); color: white; }
+  .appt-normal { background: var(--primary-light); color: var(--primary); }
+  .appt-none { color: var(--text-muted); font-size: 12px; }
+
+  /* 일정 패널 */
+  .schedule-list { padding: 12px; }
+  .schedule-item { display: flex; gap: 12px; padding: 12px; border-radius: var(--radius-sm); margin-bottom: 6px; cursor: pointer; transition: background 0.15s; }
+  .schedule-item:hover { background: var(--gray-light); }
+  .schedule-time { font-size: 13px; font-weight: 600; color: var(--text-muted); width: 40px; flex-shrink: 0; padding-top: 2px; }
+  .schedule-bar { width: 3px; border-radius: 2px; flex-shrink: 0; }
+  .schedule-info { flex: 1; }
+  .schedule-name { font-size: 14px; font-weight: 600; }
+  .schedule-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .schedule-status { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .status-done { background: var(--success-light); color: var(--success); }
+  .status-active { background: var(--primary-light); color: var(--primary); }
+  .status-wait { background: var(--gray-light); color: var(--gray); }
+  .status-new { background: var(--accent-light); color: var(--accent); }
+
+  .alert-card { margin: 12px; padding: 14px; background: var(--teal-light); border-radius: var(--radius-sm); border-left: 3px solid var(--teal); }
+  .alert-title { font-size: 13px; font-weight: 700; color: var(--teal); margin-bottom: 4px; }
+  .alert-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+  .alert-btn { margin-top: 10px; padding: 8px 14px; background: var(--teal); color: white; border: none; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; cursor: pointer; width: 100%; }
+
+  /* ── 고객 사전입력 (고객용) ── */
+  #screen-intake { background: var(--bg); }
+  #screen-intake .content { padding: 32px 20px; max-width: 680px; margin: 0 auto; flex: 1; }
+  .intake-header { margin-bottom: 28px; }
+  .step-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--primary-light); color: var(--primary); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 12px; }
+  .intake-title { font-size: 32px; font-weight: 800; color: var(--text); line-height: 1.2; }
+  .intake-subtitle { font-size: 15px; color: var(--text-muted); margin-top: 8px; line-height: 1.5; }
+  .intake-subtitle strong { color: var(--text); }
+  .progress-bar { background: var(--border); border-radius: 4px; height: 6px; margin-bottom: 28px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--teal)); border-radius: 4px; transition: width 0.4s; }
+  .progress-text { display: flex; justify-content: flex-end; font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+
+  .intake-section { background: white; border-radius: var(--radius); padding: 24px; margin-bottom: 16px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+  .section-num-title { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+  .section-num { width: 28px; height: 28px; background: var(--primary-light); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .section-title-wrap h3 { font-size: 17px; font-weight: 700; }
+  .section-title-wrap p { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+  .required-tag { display: inline-block; background: #fde8e6; color: var(--danger); font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-left: 6px; vertical-align: middle; }
+
+  .body-selector { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+  .body-btn { border: 2px solid var(--border); border-radius: var(--radius); padding: 16px 8px; text-align: center; cursor: pointer; transition: all 0.2s; background: white; }
+  .body-btn:hover { border-color: var(--primary); background: var(--primary-light); }
+  .body-btn.selected { border-color: var(--primary); background: var(--primary-light); }
+  .body-icon { font-size: 28px; display: block; margin-bottom: 6px; }
+  .body-label { font-size: 13px; font-weight: 600; color: var(--text); }
+
+  .pain-slider-wrap { position: relative; }
+  .pain-value-display { font-size: 48px; font-weight: 800; color: var(--accent); line-height: 1; }
+  .pain-value-display span { font-size: 20px; font-weight: 400; color: var(--text-muted); }
+  .pain-label-badge { display: inline-block; background: var(--accent-light); color: var(--accent); padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; margin: 8px 0 12px; }
+  input[type=range] { width: 100%; height: 6px; border-radius: 3px; outline: none; cursor: pointer; -webkit-appearance: none; background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%); }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: white; border: 3px solid var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.2); cursor: pointer; }
+  .pain-marks { display: flex; justify-content: space-between; margin-top: 8px; }
+  .pain-marks span { font-size: 12px; color: var(--text-muted); }
+  .pain-mark-nums { display: flex; justify-content: space-between; padding: 0 2px; margin-top: 4px; }
+  .pain-mark-num { font-size: 12px; color: var(--text-muted); width: 20px; text-align: center; }
+  .pain-mark-num.active { color: var(--accent); font-weight: 700; }
+
+  .quick-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .quick-tag { padding: 5px 12px; border: 1.5px solid var(--border); border-radius: 20px; font-size: 12px; cursor: pointer; color: var(--text-muted); transition: all 0.2s; background: white; }
+  .quick-tag:hover, .quick-tag.selected { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+
+  textarea { width: 100%; padding: 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; resize: vertical; min-height: 80px; outline: none; font-family: inherit; transition: border-color 0.2s; background: var(--primary-light); color: var(--text); }
+  textarea:focus { border-color: var(--primary); background: white; }
+  textarea::placeholder { color: var(--text-muted); }
+
+  .privacy-notice { background: var(--primary-light); border-radius: var(--radius-sm); padding: 12px 16px; font-size: 13px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+  .intake-footer { position: sticky; bottom: 0; background: white; border-top: 1px solid var(--border); padding: 16px 20px; display: flex; gap: 12px; max-width: 680px; margin: 0 auto; }
+  .btn-secondary { flex: 0 0 auto; padding: 14px 24px; border: 1.5px solid var(--border); background: white; border-radius: var(--radius-sm); font-size: 15px; font-weight: 600; cursor: pointer; color: var(--text-muted); }
+  .btn-submit { flex: 1; padding: 14px; background: var(--primary); color: white; border: none; border-radius: var(--radius-sm); font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+  .btn-submit:hover { background: var(--primary-dark); }
+  .btn-submit:disabled { background: var(--border); color: var(--text-muted); cursor: not-allowed; }
+
+  /* ── 안마사 소견 입력 ── */
+  #screen-therapist { background: var(--bg); }
+  #screen-therapist .content { padding: 24px 32px; max-width: 800px; margin: 0 auto; flex: 1; }
+  .patient-banner { background: var(--navy); border-radius: var(--radius); padding: 20px 24px; display: flex; align-items: center; gap: 20px; margin-bottom: 24px; color: white; }
+  .patient-avatar-lg { width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; }
+  .patient-info-main { flex: 1; }
+  .patient-info-main h2 { font-size: 20px; font-weight: 800; }
+  .patient-info-main p { font-size: 13px; opacity: 0.7; margin-top: 2px; }
+  .patient-stats { display: flex; gap: 20px; }
+  .patient-stat { text-align: center; }
+  .patient-stat .num { font-size: 22px; font-weight: 800; }
+  .patient-stat .lbl { font-size: 11px; opacity: 0.6; margin-top: 2px; }
+  .patient-stat-divider { width: 1px; background: rgba(255,255,255,0.2); }
+
+  .condition-summary { background: white; border-radius: var(--radius); padding: 20px; margin-bottom: 20px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+  .condition-summary h3 { font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+  .condition-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .condition-chip { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+  .chip-pain { background: var(--danger-light); color: var(--danger); }
+  .chip-level { background: var(--accent-light); color: var(--accent); }
+  .chip-hospital { background: var(--primary-light); color: var(--primary); }
+
+  .tension-table { width: 100%; }
+  .tension-row { display: grid; grid-template-columns: 80px 1fr; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--border); gap: 16px; }
+  .tension-row:last-child { border-bottom: none; }
+  .tension-label { font-size: 15px; font-weight: 600; }
+  .tension-options { display: flex; gap: 8px; }
+  .tension-btn { flex: 1; padding: 10px; border: 2px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; cursor: pointer; text-align: center; transition: all 0.2s; background: white; }
+  .tension-btn:hover { border-color: var(--primary); }
+  .tension-btn.low.selected { background: var(--success-light); border-color: var(--success); color: var(--success); }
+  .tension-btn.mid.selected { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+  .tension-btn.high.selected { background: var(--danger-light); border-color: var(--danger); color: var(--danger); }
+
+  .therapist-footer { display: flex; gap: 12px; margin-top: 24px; padding-bottom: 32px; }
+  .btn-save-draft { flex: 0 0 auto; padding: 14px 24px; border: 1.5px solid var(--border); background: white; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; color: var(--text-muted); }
+  .btn-save-main { flex: 1; padding: 14px; background: var(--navy); color: white; border: none; border-radius: var(--radius-sm); font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn-save-main:hover { background: var(--primary-dark); }
+
+  /* ── AI 케어 리포트 ── */
+  #screen-report { background: var(--bg); }
+  #screen-report .content { padding: 24px 24px; max-width: 720px; margin: 0 auto; flex: 1; }
+  .report-hero { background: linear-gradient(135deg, var(--primary-dark) 0%, var(--teal) 100%); border-radius: var(--radius); padding: 24px; color: white; margin-bottom: 20px; display: flex; align-items: center; gap: 20px; }
+  .report-hero-avatar { width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; }
+  .report-hero-info { flex: 1; }
+  .report-hero-info h2 { font-size: 18px; font-weight: 800; }
+  .report-hero-info p { font-size: 12px; opacity: 0.8; margin-top: 3px; }
+  .report-stats { display: flex; gap: 20px; }
+  .report-stat { text-align: center; }
+  .report-stat .num { font-size: 22px; font-weight: 800; }
+  .report-stat .lbl { font-size: 11px; opacity: 0.7; }
+  .report-stat .change { font-size: 13px; font-weight: 700; }
+
+  .ai-summary-card { background: white; border-radius: var(--radius); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+  .ai-label { display: inline-flex; align-items: center; gap: 6px; background: var(--primary-light); color: var(--primary); padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 12px; }
+  .ai-text { font-size: 14px; line-height: 1.7; color: var(--text); }
+  .ai-loading { display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 14px; }
+  .ai-spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .change-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .change-card { background: white; border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+  .change-card.improved { border-left: 4px solid var(--success); }
+  .change-card.focus { border-left: 4px solid var(--danger); }
+  .change-card-title { font-size: 13px; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .change-card.improved .change-card-title { color: var(--success); }
+  .change-card.focus .change-card-title { color: var(--danger); }
+  .change-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text); margin-bottom: 6px; }
+  .change-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .dot-green { background: var(--success); }
+  .dot-red { background: var(--danger); }
+
+  .hospital-link-card { background: var(--accent-light); border-radius: var(--radius); padding: 16px 20px; margin-bottom: 16px; border: 1px solid #f5d89a; }
+  .hospital-link-title { font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .hospital-link-text { font-size: 13px; color: var(--text); line-height: 1.6; }
+
+  .graph-card { background: white; border-radius: var(--radius); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+  .graph-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .graph-card p { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; }
+  .graph-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 4px; font-size: 12px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  .next-care-card { background: white; border-radius: var(--radius); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+  .next-care-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
+  .care-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+  .care-num { width: 22px; height: 22px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .care-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+
+  .report-footer-bar { position: sticky; bottom: 0; background: white; border-top: 1px solid var(--border); padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
+  .report-footer-hint { font-size: 12px; color: var(--text-muted); }
+  .report-footer-btns { display: flex; gap: 10px; }
+  .btn-outline { padding: 10px 20px; border: 1.5px solid var(--border); background: white; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; color: var(--text-muted); }
+  .btn-book { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+
+  /* 토스트 */
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--navy); color: white; padding: 12px 20px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; z-index: 1000; transition: transform 0.3s; box-shadow: var(--shadow-lg); }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { background: var(--success); }
+  .toast.error { background: var(--danger); }
+
+  /* 반응형 */
+  @media (max-width: 768px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .main-grid { grid-template-columns: 1fr; }
+    .table-head, .table-row { grid-template-columns: 2fr 1fr 1.5fr; }
+    .table-head > *:nth-child(3), .table-row > *:nth-child(3) { display: none; }
+    .body-selector { grid-template-columns: repeat(5, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     로그인 화면
+═══════════════════════════════════════════ -->
+<div id="screen-login" class="screen active">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="logo-big">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+      </div>
+      <h2>TouchCare</h2>
+      <p>천지안마원 케어 관리 시스템</p>
+    </div>
+    <div class="login-tabs">
+      <div class="login-tab active" onclick="switchLoginTab('therapist')">안마사 로그인</div>
+      <div class="login-tab" onclick="switchLoginTab('customer')">고객 입력</div>
+    </div>
+    <div id="login-therapist-form">
+      <div class="form-group">
+        <label>아이디</label>
+        <input type="text" id="login-id" placeholder="kimgihwa" value="kimgihwa">
+      </div>
+      <div class="form-group">
+        <label>비밀번호</label>
+        <input type="password" id="login-pw" placeholder="••••••" value="1234">
+      </div>
+      <button class="btn-primary" onclick="loginTherapist()">로그인</button>
+      <div class="login-hint">데모: 아이디 kimgihwa / 비밀번호 1234</div>
+    </div>
+    <div id="login-customer-form" style="display:none">
+      <div class="form-group">
+        <label>예약 전화번호</label>
+        <input type="tel" id="customer-phone" placeholder="010-1234-5678" value="010-1234-5678">
+      </div>
+      <button class="btn-primary" onclick="loginCustomer()">오늘 방문 전 입력하기</button>
+      <div class="login-hint">예약하신 전화번호로 본인 확인 후 방문 전 건강 정보를 입력합니다</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     대시보드 화면 (안마사용)
+═══════════════════════════════════════════ -->
+<div id="screen-dashboard" class="screen">
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">
+        <img src="logo.png" width="36" height="36" alt="TouchCare Logo">
+      </div>
+      <div class="logo-text">
+        <h1>TouchCare</h1>
+        <p>천지안마원 · 관리자 대시보드</p>
+      </div>
+    </div>
+    <div class="header-nav">
+      <button class="nav-btn active">대시보드</button>
+      <button class="nav-btn">예약 관리</button>
+      <button class="nav-btn">고객</button>
+      <button class="nav-btn">진료 기록</button>
+      <button class="nav-btn">정산</button>
+      <button class="nav-btn">설정</button>
+    </div>
+    <div class="header-right">
+      <span class="header-date" id="today-date"></span>
+      <div class="avatar" onclick="logout()" title="로그아웃">박</div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="dashboard-title">
+      <h2>안녕하세요, 김기화 원장님 👋</h2>
+      <p id="dash-subtitle"></p>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card primary">
+        <div class="stat-icon">📅</div>
+        <div class="stat-num" id="stat-total">0</div>
+        <div class="stat-label">오늘 예약 총 건수</div>
+        <div class="stat-badge">▲ 3건 어제보다</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:var(--success-light);font-size:18px;">✓</div>
+        <div class="stat-num" id="stat-done" style="color:var(--success)">0</div>
+        <div class="stat-label">완료</div>
+        <div class="stat-sub" id="stat-done-pct">진행률 0%</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:var(--accent-light);font-size:18px;">⏱</div>
+        <div class="stat-num" id="stat-wait" style="color:var(--accent)">0</div>
+        <div class="stat-label">대기</div>
+        <div class="stat-sub" id="stat-next-appt">다음 예약 -</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#fde8e6;font-size:18px;">♡</div>
+        <div class="stat-num" id="stat-new" style="color:var(--danger)">0</div>
+        <div class="stat-label">금일 신규 고객</div>
+        <div class="stat-sub">첫 방문 환영 메시지 발송 완료</div>
+      </div>
+    </div>
+    <div class="main-grid">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h3>고객 목록</h3>
+            <p id="customer-count-label">전체 0명 · 이번 달 방문 0명</p>
+          </div>
+          <div class="card-filter">
+            <button class="filter-btn active" onclick="filterCustomers('all')">전체</button>
+            <button class="filter-btn" onclick="filterCustomers('vip')">단골</button>
+            <button class="filter-btn" onclick="filterCustomers('new')">신규</button>
+            <button class="filter-btn" onclick="filterCustomers('inactive')">휴면</button>
+          </div>
+        </div>
+        <div class="customer-table">
+          <div class="table-head">
+            <span>고객</span>
+            <span>방문 횟수</span>
+            <span>마지막 방문</span>
+            <span>주요 증상</span>
+            <span>다음 예약</span>
+          </div>
+          <div id="customer-list"></div>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header"><h3>오늘의 일정</h3><a href="#" style="font-size:12px;color:var(--primary);text-decoration:none;">전체 보기</a></div>
+          <div class="schedule-list" id="schedule-list"></div>
+        </div>
+        <div class="card">
+          <div style="padding:16px">
+            <div class="alert-card">
+              <div class="alert-title">🔔 케어 알림</div>
+              <div class="alert-desc" id="alert-desc">3주 이상 방문이 없는 단골 고객이 있어요. 맞춤 메시지를 자동으로 작성해드려요.</div>
+              <button class="alert-btn">안부 메시지 보내기 →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     고객 사전입력 화면
+═══════════════════════════════════════════ -->
+<div id="screen-intake" class="screen">
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon"><img src="logo.png" width="36" height="36" alt="TouchCare Logo"></div>
+      <div class="logo-text"><h1>TouchCare</h1><p>천지안마원 · 방문 전 문진</p></div>
+    </div>
+    <div class="header-right">
+      <span class="header-date" id="intake-date-display"></span>
+    </div>
+  </div>
+  <div class="content">
+    <div class="intake-header">
+      <div class="step-badge">① STEP 1 / 1</div>
+      <div class="intake-title">오늘 방문 전<br>알려주세요</div>
+      <div class="intake-subtitle">오늘의 상태를 알려주시면 원장님이 더 정확하게 맞춰드려요.<br>모든 항목은 <strong>선택 입력</strong>이에요.</div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" style="width:20%"></div></div>
+    <div class="progress-text">1/5 완료</div>
+
+    <!-- 1. 불편한 부위 -->
+    <div class="intake-section">
+      <div class="section-num-title">
+        <div class="section-num">1</div>
+        <div class="section-title-wrap">
+          <h3>오늘 가장 불편한 부위 <span class="required-tag">필수</span></h3>
+          <p>가장 많이 신경 쓰이는 한 곳을 골라주세요</p>
+        </div>
+      </div>
+      <div class="body-selector">
+        <div class="body-btn" onclick="selectBody('목')"><span class="body-icon">🔵</span><span class="body-label">목</span></div>
+        <div class="body-btn" onclick="selectBody('어깨')"><span class="body-icon">🔵</span><span class="body-label">어깨</span></div>
+        <div class="body-btn" onclick="selectBody('허리')"><span class="body-icon">🔵</span><span class="body-label">허리</span></div>
+        <div class="body-btn" onclick="selectBody('골반')"><span class="body-icon">🔵</span><span class="body-label">골반</span></div>
+        <div class="body-btn" onclick="selectBody('다리')"><span class="body-icon">🔵</span><span class="body-label">다리</span></div>
+      </div>
+    </div>
+
+    <!-- 2. 통증 정도 -->
+    <div class="intake-section">
+      <div class="section-num-title">
+        <div class="section-num">2</div>
+        <div class="section-title-wrap">
+          <h3>오늘 통증 정도</h3>
+          <p>느껴지는 정도에 맞춰 숫자를 선택하거나 밀어주세요</p>
+        </div>
+      </div>
+      <div class="pain-value-display"><span id="pain-val">4</span><span> / 10</span></div>
+      <div class="pain-label-badge" id="pain-label">약간 뻐근</div>
+      <input type="range" min="1" max="10" value="4" id="pain-slider" oninput="updatePain(this.value)">
+      <div class="pain-marks"><span>전혀 아프지 않음</span><span>참기 힘들 정도</span></div>
+    </div>
+
+    <!-- 3. 병원 진료 기록 -->
+    <div class="intake-section">
+      <div class="section-num-title">
+        <div class="section-num">3</div>
+        <div class="section-title-wrap">
+          <h3>병원 진료 기록</h3>
+          <p>최근 병원에서 받은 진단명이 있다면 적어주세요</p>
+        </div>
+      </div>
+      <textarea id="hospital-record" placeholder="예: 요추 4번 디스크, 오십견, 일자목 증후군"></textarea>
+      <div class="quick-tags">
+        <span class="quick-tag" onclick="addTag('hospital-record','요추 디스크')">+ 요추 디스크</span>
+        <span class="quick-tag" onclick="addTag('hospital-record','거북목')">+ 거북목</span>
+        <span class="quick-tag" onclick="addTag('hospital-record','오십견')">+ 오십견</span>
+        <span class="quick-tag" onclick="addTag('hospital-record','일자목')">+ 일자목</span>
+      </div>
+    </div>
+
+    <!-- 4. 복용 약 -->
+    <div class="intake-section">
+      <div class="section-num-title">
+        <div class="section-num">4</div>
+        <div class="section-title-wrap">
+          <h3>복용 중인 약 · 치료 중인 사항</h3>
+          <p>현재 병원에서 치료 받거나 약을 드시는 게 있다면 알려주세요</p>
+        </div>
+      </div>
+      <textarea id="medication" placeholder="예: 소염제 복용 중, 주 2회 물리치료, 한방 침 치료"></textarea>
+      <div class="quick-tags">
+        <span class="quick-tag" onclick="addTag('medication','소염제 복용')">+ 소염제 복용</span>
+        <span class="quick-tag" onclick="addTag('medication','물리치료 중')">+ 물리치료 중</span>
+        <span class="quick-tag" onclick="addTag('medication','한방 치료')">+ 한방 치료</span>
+        <span class="quick-tag" onclick="addTag('medication','없음')">+ 없음</span>
+      </div>
+    </div>
+
+    <!-- 5. 최근 특이사항 -->
+    <div class="intake-section">
+      <div class="section-num-title">
+        <div class="section-num">5</div>
+        <div class="section-title-wrap">
+          <h3>최근 특이사항</h3>
+          <p>최근 1~2주 사이 있었던 일을 알려주시면 원인 파악에 도움이 돼요</p>
+        </div>
+      </div>
+      <textarea id="special-notes" placeholder="예: 장시간 운전, 무거운 짐을 들었음, 수술 이력, 잠을 못 잠"></textarea>
+      <div class="quick-tags">
+        <span class="quick-tag" onclick="addTag('special-notes','장시간 운전')">+ 장시간 운전</span>
+        <span class="quick-tag" onclick="addTag('special-notes','무거운 짐')">+ 무거운 짐</span>
+        <span class="quick-tag" onclick="addTag('special-notes','수술 이력')">+ 수술 이력</span>
+        <span class="quick-tag" onclick="addTag('special-notes','스트레스')">+ 스트레스</span>
+        <span class="quick-tag" onclick="addTag('special-notes','운동 중 부상')">+ 운동 중 부상</span>
+      </div>
+      <div class="privacy-notice">🔒 입력하신 내용은 원장님만 확인할 수 있고, 케어 이력에 안전하게 저장돼요.</div>
+    </div>
+  </div>
+  <div class="intake-footer">
+    <button class="btn-secondary" onclick="skipIntake()">건너뛰기</button>
+    <button class="btn-submit" id="intake-submit-btn" onclick="submitIntake()" disabled>입력 완료 →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     안마사 소견 입력 화면
+═══════════════════════════════════════════ -->
+<div id="screen-therapist" class="screen">
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon"><img src="logo.png" width="36" height="36" alt="TouchCare Logo"></div>
+      <div class="logo-text"><h1>TouchCare</h1><p>안마사 소견 입력</p></div>
+    </div>
+    <div class="header-right">
+      <span class="header-date" id="therapist-date-display"></span>
+      <button onclick="showScreen('dashboard')" style="padding:8px 16px;border:1.5px solid var(--border);background:white;border-radius:8px;font-size:13px;cursor:pointer;">← 대시보드</button>
+    </div>
+  </div>
+  <div class="content">
+    <!-- 고객 배너 -->
+    <div class="patient-banner">
+      <div class="patient-avatar-lg" id="therapist-avatar">김</div>
+      <div class="patient-info-main">
+        <h2 id="therapist-patient-name">김민서 님</h2>
+        <p id="therapist-patient-sub">45세 · 010-1234-5678</p>
+      </div>
+      <div class="patient-stats">
+        <div class="patient-stat">
+          <div class="num" id="therapist-visit-num">5</div>
+          <div class="lbl">회차</div>
+        </div>
+        <div class="patient-stat-divider"></div>
+        <div class="patient-stat">
+          <div class="num">60분</div>
+          <div class="lbl">시술 코스</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 고객 컨디션 요약 -->
+    <div class="condition-summary">
+      <h3>🗒 고객 입력 · 오늘 컨디션 요약</h3>
+      <div class="condition-chips" id="condition-chips">
+        <div class="condition-chip chip-pain">불편 부위: <strong>어깨</strong></div>
+        <div class="condition-chip chip-level">통증: <strong>7/10 아픔</strong></div>
+        <div class="condition-chip chip-hospital">진단: <strong>입력 없음</strong></div>
+      </div>
+      <div style="margin-top:12px;font-size:13px;color:var(--text-muted);line-height:1.6;" id="condition-detail"></div>
+    </div>
+
+    <!-- 신체 부위별 긴장도 -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-header"><h3>① 신체 부위별 긴장도</h3><p>오늘 만져본 느낌으로 각 부위의 상태를 골라주세요</p></div>
+      <div style="padding:0 20px">
+        <div class="tension-table">
+          <div class="tension-row">
+            <div class="tension-label">목</div>
+            <div class="tension-options">
+              <button class="tension-btn low" onclick="selectTension('neck','낮음',this)">낮음<br><small>부드러움</small></button>
+              <button class="tension-btn mid" onclick="selectTension('neck','보통',this)">보통<br><small>약간 뭉침</small></button>
+              <button class="tension-btn high" onclick="selectTension('neck','높음',this)">높음<br><small>심한 뭉침</small></button>
+            </div>
+          </div>
+          <div class="tension-row">
+            <div class="tension-label">어깨</div>
+            <div class="tension-options">
+              <button class="tension-btn low" onclick="selectTension('shoulder','낮음',this)">낮음<br><small>부드러움</small></button>
+              <button class="tension-btn mid" onclick="selectTension('shoulder','보통',this)">보통<br><small>약간 뭉침</small></button>
+              <button class="tension-btn high" onclick="selectTension('shoulder','높음',this)">높음<br><small>심한 뭉침</small></button>
+            </div>
+          </div>
+          <div class="tension-row">
+            <div class="tension-label">허리</div>
+            <div class="tension-options">
+              <button class="tension-btn low" onclick="selectTension('back','낮음',this)">낮음<br><small>부드러움</small></button>
+              <button class="tension-btn mid" onclick="selectTension('back','보통',this)">보통<br><small>약간 뭉침</small></button>
+              <button class="tension-btn high" onclick="selectTension('back','높음',this)">높음<br><small>심한 뭉침</small></button>
+            </div>
+          </div>
+          <div class="tension-row">
+            <div class="tension-label">골반</div>
+            <div class="tension-options">
+              <button class="tension-btn low" onclick="selectTension('pelvis','낮음',this)">낮음<br><small>부드러움</small></button>
+              <button class="tension-btn mid" onclick="selectTension('pelvis','보통',this)">보통<br><small>약간 뭉침</small></button>
+              <button class="tension-btn high" onclick="selectTension('pelvis','높음',this)">높음<br><small>심한 뭉침</small></button>
+            </div>
+          </div>
+          <div class="tension-row">
+            <div class="tension-label">다리</div>
+            <div class="tension-options">
+              <button class="tension-btn low" onclick="selectTension('legs','낮음',this)">낮음<br><small>부드러움</small></button>
+              <button class="tension-btn mid" onclick="selectTension('legs','보통',this)">보통<br><small>약간 뭉침</small></button>
+              <button class="tension-btn high" onclick="selectTension('legs','높음',this)">높음<br><small>심한 뭉침</small></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 소견 메모 -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-header"><h3>② 오늘 시술 특이사항</h3></div>
+      <div style="padding:16px 20px">
+        <textarea id="therapist-notes" rows="3" placeholder="오늘 시술하면서 특별히 느낀 점이나 고객이 말씀하신 내용을 기록해주세요"></textarea>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-header"><h3>③ 다음 방문 때 집중할 부위 · 추천</h3></div>
+      <div style="padding:16px 20px">
+        <textarea id="next-care" rows="2" placeholder="다음 케어 때 집중해야 할 부위나 방향을 메모해주세요"></textarea>
+      </div>
+    </div>
+
+    <div class="therapist-footer">
+      <button class="btn-save-draft" onclick="saveDraft()">임시 저장</button>
+      <button class="btn-save-main" onclick="saveAndGenerateReport()">
+        ✓ 저장하고 AI 리포트 생성하기
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     AI 케어 리포트 화면
+═══════════════════════════════════════════ -->
+<div id="screen-report" class="screen">
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon"><img src="logo.png" width="36" height="36" alt="TouchCare Logo"></div>
+      <div class="logo-text"><h1>TouchCare</h1><p>천지안마원 · AI 케어 리포트</p></div>
+    </div>
+    <div class="header-right">
+      <span class="header-date" id="report-date-display"></span>
+      <button style="padding:6px 14px;border:1.5px solid var(--border);background:white;border-radius:8px;font-size:13px;cursor:pointer;" onclick="showScreen('dashboard')">리포트 공유</button>
+    </div>
+  </div>
+  <div class="content">
+    <!-- 리포트 헤로 -->
+    <div class="report-hero">
+      <div class="report-hero-avatar" id="report-avatar">김</div>
+      <div class="report-hero-info">
+        <h2 id="report-patient-name">김민서 고객님의 케어 리포트</h2>
+        <p id="report-patient-sub">45세 · 케어 시작 2025. 11. 10 · VIP 고객</p>
+      </div>
+      <div class="report-stats">
+        <div class="report-stat">
+          <div class="num" id="report-visit-num">5</div>
+          <div class="lbl">총 방문 횟수</div>
+        </div>
+        <div style="width:1px;background:rgba(255,255,255,0.3)"></div>
+        <div class="report-stat">
+          <div class="change" id="report-change" style="color:#7effc4">↓ 40%</div>
+          <div class="lbl">전체 긴장도 변화</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI 분석 요약 -->
+    <div class="ai-summary-card">
+      <div class="ai-label">🤖 AI 분석 요약</div>
+      <div id="ai-summary-content">
+        <div class="ai-loading"><div class="ai-spinner"></div> AI가 분석 중입니다...</div>
+      </div>
+    </div>
+
+    <!-- 변화 카드 -->
+    <div class="change-grid">
+      <div class="change-card improved">
+        <div class="change-card-title">✓ 개선된 부위</div>
+        <div id="improved-areas">
+          <div class="change-item"><div class="change-dot dot-green"></div>골반 정렬 상태 호전</div>
+          <div class="change-item"><div class="change-dot dot-green"></div>허리 긴장도 감소</div>
+          <div class="change-item"><div class="change-dot dot-green"></div>다리 순환 개선</div>
+        </div>
+      </div>
+      <div class="change-card focus">
+        <div class="change-card-title">⚠ 집중 필요 부위</div>
+        <div id="focus-areas">
+          <div class="change-item"><div class="change-dot dot-red"></div>목 긴장도 증가 (높음)</div>
+          <div class="change-item"><div class="change-dot dot-red"></div>어깨 승모근 유착</div>
+          <div class="change-item"><div class="change-dot dot-red"></div>수면 부족으로 인한 전신 피로</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 병원 연계 -->
+    <div class="hospital-link-card" id="hospital-link-section" style="display:none">
+      <div class="hospital-link-title">📋 병원 진료 기록 연계 케어</div>
+      <div class="hospital-link-text" id="hospital-link-text"></div>
+    </div>
+
+    <!-- 변화 그래프 -->
+    <div class="graph-card">
+      <h3>부위별 긴장도 변화 (회차별)</h3>
+      <p>숫자가 낮을수록 긴장도가 낮아진 것 (1=낮음, 2=보통, 3=높음)</p>
+      <div class="graph-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#1a6b8a"></div>목</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#e8a020"></div>어깨</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#2d8a4e"></div>허리</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#9b59b6"></div>골반</div>
+      </div>
+      <canvas id="tension-chart" height="180"></canvas>
+    </div>
+
+    <!-- 다음 케어 추천 -->
+    <div class="next-care-card">
+      <h3>🎯 다음 방문 케어 추천</h3>
+      <div id="next-care-content">
+        <div class="care-item"><div class="care-num">1</div><div class="care-text">목·어깨 집중 케어 — 승모근과 경추 주변 근막 이완 위주</div></div>
+        <div class="care-item"><div class="care-num">2</div><div class="care-text">수면 개선을 위한 두피·뒷목 이완 추가</div></div>
+        <div class="care-item"><div class="care-num">3</div><div class="care-text">골반 안정화 유지 케어 — 지난 회차 개선 상태 유지</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="report-footer-bar">
+    <div class="report-footer-hint">다음 예약을 미리 잡으면 원하는 시간을 확보할 수 있어요</div>
+    <div class="report-footer-btns">
+      <button class="btn-outline" onclick="showScreen('dashboard')">리포트 저장</button>
+      <button class="btn-book" onclick="showScreen('dashboard')">다음 예약하기 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- 토스트 -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════
+// Supabase 초기화
+// ══════════════════════════════════════════════
+const SUPABASE_URL = 'https://oyuqzrvocvjzqblqrvhh.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95dXF6cnZvY3ZqenFibHFydmhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2MDU4NjcsImV4cCI6MjA5NTE4MTg2N30.ldDrMCNTCaR_9gIYYIvHEiNyhbIq0sFGzAoO1lV2Apw';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// 상태
+let currentCustomer = null;
+let currentVisit = null;
+let tensionData = { neck: null, shoulder: null, back: null, pelvis: null, legs: null };
+let selectedBodyPart = null;
+let allCustomers = [];
+let chartInstance = null;
+
+// 색상 팔레트
+const COLORS = ['#e8a020','#1a6b8a','#2ba0a0','#2d8a4e','#9b59b6','#c0392b','#e67e22','#16a085'];
+
+// ══════════════════════════════════════════════
+// 화면 전환
+// ══════════════════════════════════════════════
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  if (name === 'dashboard') loadDashboard();
+  if (name === 'report') initReport();
+}
+
+// ══════════════════════════════════════════════
+// 날짜/시간
+// ══════════════════════════════════════════════
+function formatDate(d) {
+  const days = ['일','월','화','수','목','금','토'];
+  return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
+}
+
+function initDates() {
+  const now = new Date();
+  const str = formatDate(now);
+  const el = document.getElementById('today-date');
+  if (el) el.textContent = str;
+  const el2 = document.getElementById('intake-date-display');
+  if (el2) el2.textContent = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} (${['일','월','화','수','목','금','토'][now.getDay()]}) · 오후 2:30 예약`;
+  const el3 = document.getElementById('therapist-date-display');
+  if (el3) el3.textContent = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} (${['일','월','화','수','목','금','토'][now.getDay()]}) · 14:30`;
+  const el4 = document.getElementById('report-date-display');
+  if (el4) el4.textContent = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} (${['일','월','화','수','목','금','토'][now.getDay()]}) · 5회차 리포트`;
+  const el5 = document.getElementById('dash-subtitle');
+  if (el5) el5.textContent = `${str} · 오늘 예약 로딩 중...`;
+}
+
+// ══════════════════════════════════════════════
+// 로그인
+// ══════════════════════════════════════════════
+function switchLoginTab(tab) {
+  document.querySelectorAll('.login-tab').forEach((t,i) => t.classList.toggle('active', (tab==='therapist'&&i===0)||(tab==='customer'&&i===1)));
+  document.getElementById('login-therapist-form').style.display = tab === 'therapist' ? 'block' : 'none';
+  document.getElementById('login-customer-form').style.display = tab === 'customer' ? 'block' : 'none';
+}
+
+function loginTherapist() {
+  const id = document.getElementById('login-id').value;
+  const pw = document.getElementById('login-pw').value;
+  if (id === 'kimgihwa' && pw === '1234') {
+    showToast('로그인 성공! 환영합니다 👋', 'success');
+    showScreen('dashboard');
+  } else {
+    showToast('아이디 또는 비밀번호가 틀렸습니다', 'error');
+  }
+}
+
+async function loginCustomer() {
+  const phone = document.getElementById('customer-phone').value.trim();
+  const { data } = await db.from('customers').select('*').eq('phone', phone).single();
+  if (data) {
+    currentCustomer = data;
+    showScreen('intake');
+  } else {
+    showToast('예약 정보를 찾을 수 없습니다. 전화번호를 확인해주세요.', 'error');
+  }
+}
+
+function logout() { showScreen('login'); }
+
+// ══════════════════════════════════════════════
+// 대시보드
+// ══════════════════════════════════════════════
+async function loadDashboard() {
+  const { data: customers } = await db.from('customers').select('*').order('created_at', { ascending: false });
+  const { data: visits } = await db.from('visits').select('*').eq('visit_date', new Date().toISOString().split('T')[0]);
+
+  allCustomers = customers || [];
+  const todayVisits = visits || [];
+
+  const done = todayVisits.filter(v => v.status === 'completed').length;
+  const wait = todayVisits.filter(v => v.status === 'scheduled').length;
+
+  document.getElementById('stat-total').textContent = todayVisits.length || 12;
+  document.getElementById('stat-done').textContent = done || 7;
+  document.getElementById('stat-wait').textContent = wait || 4;
+  document.getElementById('stat-new').textContent = 2;
+  document.getElementById('stat-done-pct').textContent = `진행률 ${todayVisits.length ? Math.round(done/todayVisits.length*100) : 58}%`;
+  document.getElementById('stat-next-appt').textContent = '다음 예약 14:30 · 김민서';
+  document.getElementById('customer-count-label').textContent = `전체 ${allCustomers.length}명 · 이번 달 방문 ${Math.floor(allCustomers.length*0.4)}명`;
+  document.getElementById('dash-subtitle').textContent = document.getElementById('today-date').textContent + ` · 오늘 예약 ${todayVisits.length || 12}건`;
+
+  renderCustomerList(allCustomers);
+  renderSchedule();
+}
+
+function renderCustomerList(customers) {
+  const list = document.getElementById('customer-list');
+  if (!customers.length) {
+    list.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted)">고객 데이터가 없습니다</div>';
+    return;
+  }
+  const symptoms = ['어깨 결림','허리 통증','두통·목 결림','무릎 근육통','손목·팔 피로','종아리 부종','오십견','골반 통증'];
+  const tagColors = ['#fde8e6:#c0392b','#e6f5ec:#2d8a4e','#e8f4f8:#1a6b8a','#fef3e0:#e8a020','#f3e8ff:#9b59b6'];
+  list.innerHTML = customers.map((c, i) => {
+    const color = COLORS[i % COLORS.length];
+    const symptom = c.main_symptom || symptoms[i % symptoms.length];
+    const tc = tagColors[i % tagColors.length].split(':');
+    const visits = [38,12,64,7,3,21][i] || 1;
+    const dates = ['2026.04.18','2026.04.15','2026.04.21','2026.04.10','2026.04.19','2026.04.17'];
+    const appts = ['오늘 14:30','4월 26일 (일)','4월 28일 (화)','5월 2일 (토)','4월 25일 (토)','미예약'];
+    const apptClass = i===0?'appt-today':i<3?'appt-soon':i<5?'appt-normal':'appt-none';
+    return `<div class="table-row" onclick="openTherapistNote('${c.id}')">
+      <div class="customer-info">
+        <div class="customer-avatar" style="background:${color}">${c.name.substring(0,1)}</div>
+        <div>
+          <div class="customer-name">${c.name}${c.is_vip?'<span class="vip-badge">VIP</span>':''}</div>
+          <div class="customer-detail">${c.age || 40}세 · ${c.phone || '-'}</div>
+        </div>
+      </div>
+      <div class="visit-count">${visits}회</div>
+      <div style="font-size:13px;color:var(--text-muted)">${dates[i]||'-'}<br><span style="font-size:11px">${[5,8,2,13,4,6][i]}일 전</span></div>
+      <div><span class="symptom-tag" style="background:${tc[0]};color:${tc[1]}">${symptom}</span></div>
+      <div><span class="appt-badge ${apptClass}">${appts[i]||'-'}</span></div>
+    </div>`;
+  }).join('');
+}
+
+function filterCustomers(type) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  if (type === 'all') renderCustomerList(allCustomers);
+  else if (type === 'vip') renderCustomerList(allCustomers.filter(c => c.is_vip));
+  else renderCustomerList(allCustomers);
+}
+
+function renderSchedule() {
+  const schedules = [
+    { time:'09:00', name:'김영희', desc:'전신 관리 · 60분', status:'done', color:'#2d8a4e' },
+    { time:'10:30', name:'오세준', desc:'척추 집중 · 90분', status:'done', color:'#2d8a4e' },
+    { time:'13:00', name:'윤지호', desc:'어깨·목 케어 · 45분', status:'active', color:'#1a6b8a' },
+    { time:'14:30', name:'김민서', desc:'전신 관리 · 60분', status:'wait', color:'#6b7a8d' },
+    { time:'16:00', name:'강하늘', desc:'하체 집중 · 60분', status:'wait', color:'#6b7a8d' },
+    { time:'17:30', name:'신예린', desc:'상담 + 전신 · 75분', status:'new', color:'#e8a020' },
+  ];
+  const statusMap = { done:'완료', active:'진행 중', wait:'대기', new:'신규' };
+  const classMap = { done:'status-done', active:'status-active', wait:'status-wait', new:'status-new' };
+  document.getElementById('schedule-list').innerHTML = schedules.map(s => `
+    <div class="schedule-item">
+      <div class="schedule-time">${s.time}</div>
+      <div class="schedule-bar" style="background:${s.color}"></div>
+      <div class="schedule-info">
+        <div class="schedule-name">${s.name}</div>
+        <div class="schedule-desc">${s.desc}</div>
+      </div>
+      <div class="schedule-status ${classMap[s.status]}">${statusMap[s.status]}</div>
+    </div>`).join('');
+}
+
+async function openTherapistNote(customerId) {
+  const { data: customer } = await db.from('customers').select('*').eq('id', customerId).single();
+  if (!customer) return;
+  currentCustomer = customer;
+  const { data: visits } = await db.from('visits').select('*').eq('customer_id', customerId).order('visit_number', { ascending: false });
+  currentVisit = visits ? visits[0] : null;
+  const visitNum = visits ? visits.length + 1 : 1;
+
+  document.getElementById('therapist-avatar').textContent = customer.name.substring(0,1);
+  document.getElementById('therapist-patient-name').textContent = customer.name + ' 님';
+  document.getElementById('therapist-patient-sub').textContent = `${customer.age||'-'}세 · ${customer.phone||'-'}`;
+  document.getElementById('therapist-visit-num').textContent = visitNum + '회차';
+
+  const intake = currentVisit;
+  const chips = document.getElementById('condition-chips');
+  if (intake && intake.pain_area) {
+    chips.innerHTML = `
+      <div class="condition-chip chip-pain">불편 부위: <strong>${intake.pain_area}</strong></div>
+      <div class="condition-chip chip-level">통증: <strong>${intake.pain_level||'-'}/10</strong></div>
+      <div class="condition-chip chip-hospital">진단: <strong>${intake.hospital_record||'입력 없음'}</strong></div>`;
+    const detail = document.getElementById('condition-detail');
+    if (intake.medication) detail.innerHTML += `<div>💊 복용/치료: ${intake.medication}</div>`;
+    if (intake.special_notes) detail.innerHTML += `<div>📝 특이사항: ${intake.special_notes}</div>`;
+  }
+  tensionData = { neck:null, shoulder:null, back:null, pelvis:null, legs:null };
+  showScreen('therapist');
+}
+
+// ══════════════════════════════════════════════
+// 고객 사전입력
+// ══════════════════════════════════════════════
+function selectBody(part) {
+  selectedBodyPart = part;
+  document.querySelectorAll('.body-btn').forEach(b => b.classList.remove('selected'));
+  event.target.closest('.body-btn').classList.add('selected');
+  document.getElementById('intake-submit-btn').disabled = false;
+  // 진행바 업데이트
+  document.querySelector('.progress-fill').style.width = '40%';
+  document.querySelector('.progress-text').textContent = '2/5 완료';
+}
+
+const painLabels = ['','거의 없음','약간 불편','살짝 아픔','약간 아픔','약간 뻐근','뻐근함','꽤 아픔','많이 아픔','매우 아픔','참기 힘듦'];
+function updatePain(val) {
+  document.getElementById('pain-val').textContent = val;
+  document.getElementById('pain-label').textContent = painLabels[val] || '';
+}
+
+function addTag(fieldId, text) {
+  const el = document.getElementById(fieldId);
+  el.value = el.value ? el.value + ', ' + text : text;
+}
+
+async function submitIntake() {
+  if (!currentCustomer) return;
+  const data = {
+    customer_id: currentCustomer.id,
+    visit_number: 1,
+    pain_area: selectedBodyPart,
+    pain_level: parseInt(document.getElementById('pain-slider').value),
+    hospital_record: document.getElementById('hospital-record').value,
+    medication: document.getElementById('medication').value,
+    special_notes: document.getElementById('special-notes').value,
+    status: 'scheduled',
+    visit_date: new Date().toISOString().split('T')[0]
+  };
+  const { data: visit, error } = await db.from('visits').insert([data]).select().single();
+  if (error) { showToast('저장 중 오류가 발생했습니다', 'error'); return; }
+  currentVisit = visit;
+  showToast('입력 완료! 원장님이 확인하실 예정입니다 ✓', 'success');
+  setTimeout(() => showScreen('report'), 1500);
+}
+
+function skipIntake() { showScreen('report'); }
+
+// ══════════════════════════════════════════════
+// 안마사 소견
+// ══════════════════════════════════════════════
+function selectTension(part, level, btn) {
+  const row = btn.closest('.tension-options');
+  row.querySelectorAll('.tension-btn').forEach(b => {
+    b.classList.remove('selected');
+  });
+  btn.classList.add('selected');
+  tensionData[part] = level;
+}
+
+function saveDraft() { showToast('임시 저장되었습니다', 'success'); }
+
+async function saveAndGenerateReport() {
+  if (!currentCustomer) { showToast('고객을 선택해주세요', 'error'); return; }
+  const visitData = {
+    customer_id: currentCustomer.id,
+    visit_number: parseInt(document.getElementById('therapist-visit-num').textContent) || 1,
+    neck_tension: tensionData.neck,
+    shoulder_tension: tensionData.shoulder,
+    back_tension: tensionData.back,
+    pelvis_tension: tensionData.pelvis,
+    legs_tension: tensionData.legs,
+    therapist_notes: document.getElementById('therapist-notes').value,
+    next_care_recommendation: document.getElementById('next-care').value,
+    status: 'completed',
+    visit_date: new Date().toISOString().split('T')[0]
+  };
+  const { data: visit, error } = await db.from('visits').insert([visitData]).select().single();
+  if (error) { showToast('저장 중 오류: ' + error.message, 'error'); return; }
+  currentVisit = visit;
+  showToast('저장 완료! AI 리포트를 생성합니다...', 'success');
+  setTimeout(() => showScreen('report'), 1000);
+}
+
+// ══════════════════════════════════════════════
+// AI 케어 리포트
+// ══════════════════════════════════════════════
+async function initReport() {
+  const customer = currentCustomer;
+  const visit = currentVisit;
+  if (!customer) {
+    // 데모 데이터로 진행
+    renderDemoReport();
+    return;
+  }
+
+  document.getElementById('report-avatar').textContent = customer.name.substring(0,1);
+  document.getElementById('report-patient-name').textContent = customer.name + ' 고객님의 케어 리포트';
+  document.getElementById('report-patient-sub').textContent = `${customer.age||'-'}세 · VIP 고객`;
+
+  const { data: visits } = await db.from('visits').select('*').eq('customer_id', customer.id).order('visit_date');
+  document.getElementById('report-visit-num').textContent = (visits||[]).length;
+
+  // AI 요약 생성
+  generateAISummary(customer, visit, visits||[]);
+  renderChart(visits||[]);
+  renderDemoReport();
+}
+
+async function generateAISummary(customer, visit, visits) {
+  const summaryEl = document.getElementById('ai-summary-content');
+  summaryEl.innerHTML = '<div class="ai-loading"><div class="ai-spinner"></div> AI가 분석 중입니다...</div>';
+
+  try {
+    const prompt = `당신은 국가공인 안마사를 돕는 AI 케어 어시스턴트입니다.
+고객 정보:
+- 이름: ${customer.name}, 나이: ${customer.age}세
+- 주요 증상: ${customer.main_symptom||'미기재'}
+- 오늘 불편 부위: ${visit?.pain_area||'미기재'}, 통증 강도: ${visit?.pain_level||'-'}/10
+- 병원 진단: ${visit?.hospital_record||'없음'}
+- 복용약/치료: ${visit?.medication||'없음'}
+- 특이사항: ${visit?.special_notes||'없음'}
+- 안마사 소견: 목(${visit?.neck_tension||'미기재'}), 어깨(${visit?.shoulder_tension||'미기재'}), 허리(${visit?.back_tension||'미기재'}), 골반(${visit?.pelvis_tension||'미기재'}), 다리(${visit?.legs_tension||'미기재'})
+- 총 방문 횟수: ${visits.length}회
+
+이번 시술 결과에 대해 150자 내외의 전문적이고 따뜻한 한국어 분석 요약을 작성해주세요. 고객이 이해하기 쉬운 언어로, 개선된 점과 집중 필요한 점을 균형 있게 언급해주세요.`;
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 300,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.[0]?.text || '';
+    summaryEl.innerHTML = `<div class="ai-text">${text}</div>`;
+
+    // DB 저장
+    if (visit) {
+      await db.from('visits').update({ ai_summary: text }).eq('id', visit.id);
+    }
+  } catch(e) {
+    summaryEl.innerHTML = `<div class="ai-text">이번 ${visits.length}회차 시술 결과, 전반적인 긴장도가 이전 방문 대비 개선되고 있습니다. 지속적인 케어를 통해 몸의 균형을 회복하고 있으며, 다음 방문 때도 꾸준한 관리를 권장드립니다.</div>`;
+  }
+
+  // 병원 기록 연계
+  if (visit?.hospital_record) {
+    document.getElementById('hospital-link-section').style.display = 'block';
+    document.getElementById('hospital-link-text').textContent = `${visit.hospital_record} 진단 이력을 고려하여, 오늘 시술 시 해당 부위 과도한 압력을 피하고 주변 근육 이완 중심으로 케어를 진행하였습니다.`;
+  }
+}
+
+function renderChart(visits) {
+  const ctx = document.getElementById('tension-chart').getContext('2d');
+  if (chartInstance) chartInstance.destroy();
+
+  const tensionToNum = t => t === '높음' ? 3 : t === '보통' ? 2 : t === '낮음' ? 1 : null;
+  const labels = visits.length > 0 ? visits.map((v,i) => `${i+1}회차`) : ['1회차','2회차','3회차','4회차','5회차'];
+  const demoData = [[3,3,2,1,3],[3,2,2,2,3],[2,2,2,1,1],[2,2,1,1,1]];
+
+  chartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label:'목', data: visits.length > 0 ? visits.map(v=>tensionToNum(v.neck_tension)) : demoData[0], borderColor:'#1a6b8a', backgroundColor:'rgba(26,107,138,0.1)', tension:0.4, pointRadius:5, pointBackgroundColor:'#1a6b8a' },
+        { label:'어깨', data: visits.length > 0 ? visits.map(v=>tensionToNum(v.shoulder_tension)) : demoData[1], borderColor:'#e8a020', backgroundColor:'rgba(232,160,32,0.1)', tension:0.4, pointRadius:5, pointBackgroundColor:'#e8a020' },
+        { label:'허리', data: visits.length > 0 ? visits.map(v=>tensionToNum(v.back_tension)) : demoData[2], borderColor:'#2d8a4e', backgroundColor:'rgba(45,138,78,0.1)', tension:0.4, pointRadius:5, pointBackgroundColor:'#2d8a4e' },
+        { label:'골반', data: visits.length > 0 ? visits.map(v=>tensionToNum(v.pelvis_tension)) : demoData[3], borderColor:'#9b59b6', backgroundColor:'rgba(155,89,182,0.1)', tension:0.4, pointRadius:5, pointBackgroundColor:'#9b59b6' },
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:true,
+      plugins:{ legend:{ display:false } },
+      scales: {
+        y: { min:0, max:4, ticks:{ stepSize:1, callback: v=>['','낮음','보통','높음',''][v] }, grid:{ color:'#f0f4f8' } },
+        x: { grid:{ display:false } }
+      }
+    }
+  });
+}
+
+function renderDemoReport() {
+  // 이미 HTML에 데모 데이터 있음
+  if (!currentVisit) renderChart([]);
+}
+
+// ══════════════════════════════════════════════
+// 유틸
+// ══════════════════════════════════════════════
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (type?' '+type:'');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// 초기화
+initDates();
+</script>
+</body>
+</html>
