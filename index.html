@@ -72,6 +72,10 @@
   .btn-primary { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: var(--radius-sm); font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; margin-top: 8px; }
   .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(26,107,138,0.3); }
   .login-hint { text-align: center; margin-top: 16px; font-size: 12px; color: var(--text-muted); background: var(--gray-light); padding: 10px; border-radius: var(--radius-sm); }
+  @keyframes slideDown { from { max-height: 0; opacity: 0; transform: translateY(-6px); } to { max-height: 120px; opacity: 1; transform: translateY(0); } }
+  .field-reveal { animation: slideDown 0.3s ease forwards; overflow: hidden; }
+  #customer-pin { font-size: 22px; letter-spacing: 8px; text-align: center; font-weight: 700; }
+  .pin-hint { text-align: center; font-size: 11px; color: var(--text-muted); margin-top: 4px; }
 
   /* ── 대시보드 ── */
   #screen-dashboard .content { padding: 28px 32px; flex: 1; }
@@ -383,19 +387,23 @@
       <div class="login-hint">데모: 아이디 kimgihwa / 비밀번호 1234</div>
     </div>
     <div id="login-customer-form" style="display:none">
+      <!-- PIN 필드 (URL phone 모드에서만 표시) -->
+      <div class="form-group" id="customer-pin-group" style="display:none">
+        <label>전화번호 뒷 4자리</label>
+        <input type="tel" id="customer-pin" placeholder="0000" maxlength="4" inputmode="numeric" pattern="[0-9]*">
+        <div class="pin-hint">예약 시 등록한 전화번호 끝 4자리를 입력하세요</div>
+      </div>
+      <!-- 이름 필드 (직접입력 모드 기본 표시 / URL 모드는 신규일 때 동적으로 나타남) -->
       <div class="form-group" id="customer-name-group">
         <label>이름</label>
         <input type="text" id="customer-name" placeholder="홍길동">
       </div>
+      <!-- 전화번호 필드 (직접입력 모드에서만 표시) -->
       <div class="form-group" id="customer-phone-group">
         <label>예약 전화번호</label>
         <input type="tel" id="customer-phone" placeholder="010-1234-5678">
       </div>
-      <div class="form-group" id="customer-pin-group" style="display:none">
-        <label>전화번호 뒷 4자리</label>
-        <input type="number" id="customer-pin" placeholder="전화번호 뒷 4자리" maxlength="4" style="letter-spacing:4px;font-size:18px;text-align:center">
-      </div>
-      <button class="btn-primary" onclick="loginCustomer()">오늘 방문 전 입력하기</button>
+      <button class="btn-primary" id="customer-login-btn" onclick="loginCustomer()">오늘 방문 전 입력하기</button>
       <div class="login-hint" id="customer-login-hint">예약하신 이름과 전화번호로 본인 확인 후 방문 전 건강 정보를 입력합니다</div>
     </div>
   </div>
@@ -1108,6 +1116,7 @@ let selectedBodyPart = null;
 let allCustomers = [];
 let allTodayVisits = [];
 let urlPhone = '';
+let pinVerified = false;
 let chartInstance = null;
 
 // 색상 팔레트
@@ -1167,29 +1176,52 @@ function loginTherapist() {
 }
 
 async function loginCustomer() {
-  const name = document.getElementById('customer-name').value.trim();
-
   if (urlPhone) {
-    // ── URL phone 모드: PIN(뒷 4자리) 확인
-    const pin = String(document.getElementById('customer-pin').value).trim();
-    if (!pin || pin.length !== 4) { showToast('전화번호 뒷 4자리를 입력해주세요.', 'error'); return; }
-    if (!urlPhone.endsWith(pin)) { showToast('전화번호 뒷 4자리가 맞지 않습니다.', 'error'); return; }
+    // ══ URL phone 모드 ══
+    if (!pinVerified) {
+      // ── 단계 1: PIN 확인
+      const pin = document.getElementById('customer-pin').value.replace(/\D/g, '').trim();
+      if (!pin || pin.length !== 4) { showToast('전화번호 뒷 4자리를 입력해주세요.', 'error'); return; }
 
-    const { data: existing } = await db.from('customers').select('*').eq('phone', urlPhone).single();
-    if (existing) {
-      currentCustomer = existing;
-      showScreen('intake');
+      // phone에서 숫자만 추출 후 뒷 4자리 비교
+      const last4 = urlPhone.replace(/\D/g, '').slice(-4);
+      if (pin !== last4) { showToast('전화번호 뒷 4자리가 맞지 않습니다.', 'error'); return; }
+
+      // DB 조회
+      const { data: existing } = await db.from('customers').select('*').eq('phone', urlPhone).single();
+      if (existing) {
+        // 기존 고객 → 바로 intake
+        currentCustomer = existing;
+        showScreen('intake');
+        return;
+      }
+
+      // 신규 고객 → 이름 입력 필드 노출
+      pinVerified = true;
+      const nameGroup = document.getElementById('customer-name-group');
+      nameGroup.style.display = 'block';
+      nameGroup.classList.add('field-reveal');
+      document.getElementById('customer-name').focus();
+      document.getElementById('customer-login-hint').textContent = '처음 방문이시군요! 이름을 입력해 주세요 😊';
+      document.getElementById('customer-login-hint').style.background = 'var(--teal-light)';
+      document.getElementById('customer-login-hint').style.color = 'var(--teal)';
+      document.getElementById('customer-login-btn').textContent = '입력 완료';
       return;
     }
-    // 신규 고객 생성 (이름 필요)
+
+    // ── 단계 2: 이름 입력 → 신규 고객 생성
+    const name = document.getElementById('customer-name').value.trim();
     if (!name) { showToast('이름을 입력해주세요.', 'error'); return; }
-    const { data: created, error } = await db.from('customers').insert([{ name, phone: urlPhone, created_at: new Date().toISOString() }]).select().single();
+    const { data: created, error } = await db.from('customers')
+      .insert([{ name, phone: urlPhone, created_at: new Date().toISOString() }])
+      .select().single();
     if (error) { showToast('오류가 발생했습니다. 다시 시도해주세요.', 'error'); return; }
     currentCustomer = created;
-    showToast(`${name}님, 처음 방문하셨군요!`, 'success');
     showScreen('intake');
+
   } else {
-    // ── 직접 입력 모드: 이름 + 전체 전화번호
+    // ══ 직접 입력 모드: 이름 + 전화번호 전체 ══
+    const name = document.getElementById('customer-name').value.trim();
     const phone = document.getElementById('customer-phone').value.trim();
     if (!name) { showToast('이름을 입력해주세요.', 'error'); return; }
     if (!phone) { showToast('전화번호를 입력해주세요.', 'error'); return; }
@@ -1200,7 +1232,9 @@ async function loginCustomer() {
       showScreen('intake');
       return;
     }
-    const { data: created, error } = await db.from('customers').insert([{ name, phone, created_at: new Date().toISOString() }]).select().single();
+    const { data: created, error } = await db.from('customers')
+      .insert([{ name, phone, created_at: new Date().toISOString() }])
+      .select().single();
     if (error) { showToast('확인 중 오류가 발생했습니다. 다시 시도해주세요.', 'error'); return; }
     currentCustomer = created;
     showToast(`${name}님, 처음 방문하셨군요! 건강 정보를 입력해주세요.`, 'success');
@@ -1807,16 +1841,16 @@ updatePain(4);
   switchLoginTab('customer');
 
   if (phone) {
-    // PIN 모드 설정: 전화번호 입력 숨기고 PIN 표시
+    // PIN 모드: 이름·전화번호 필드 숨기고 PIN만 표시
     urlPhone = phone;
+    pinVerified = false;
     document.getElementById('customer-phone-group').style.display = 'none';
+    document.getElementById('customer-name-group').style.display = 'none';
     document.getElementById('customer-pin-group').style.display = 'block';
+    document.getElementById('customer-login-btn').textContent = '확인하기';
     document.getElementById('customer-login-hint').textContent = '전화번호 뒷 4자리로 본인 확인 후 방문 전 건강 정보를 입력합니다';
-    // 이름 필드 placeholder 업데이트
-    const nameInput = document.getElementById('customer-name');
-    if (nameInput) nameInput.placeholder = '처음 방문이시면 이름을 입력해주세요';
     setTimeout(() => document.getElementById('customer-pin').focus(), 300);
-    return; // 버튼 클릭 시 loginCustomer에서 처리
+    return;
   }
 
   // token 방식 (자동 로그인)
