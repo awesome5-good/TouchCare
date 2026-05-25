@@ -172,6 +172,22 @@
   .customer-table-footer { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-top: 1px solid var(--border); font-size: 13px; color: var(--text-muted); }
   .customer-table-footer a { color: var(--primary); text-decoration: none; font-weight: 600; font-size: 13px; }
 
+  /* ── 고객 상세 화면 ── */
+  #screen-customer-detail { background: var(--bg); }
+  #screen-customer-detail .content { padding: 24px 32px; max-width: 800px; margin: 0 auto; flex: 1; }
+  .visit-history-item { display: flex; gap: 14px; padding: 16px 20px; border-bottom: 1px solid var(--border); align-items: flex-start; }
+  .visit-history-item:last-child { border-bottom: none; }
+  .visit-history-meta { flex-shrink: 0; width: 68px; text-align: center; }
+  .visit-date-label { font-size: 12px; color: var(--text-muted); }
+  .visit-round-badge { display: inline-block; background: var(--primary-light); color: var(--primary); font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 4px; margin-top: 3px; }
+  .visit-history-body { flex: 1; min-width: 0; }
+  .visit-history-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
+  .visit-history-note { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .btn-detail-action { padding: 6px 13px; border: 1.5px solid var(--border); background: white; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; flex-shrink: 0; color: var(--text-muted); transition: all 0.15s; }
+  .btn-detail-action:hover { border-color: var(--primary); color: var(--primary); }
+  .detail-cta { width: 100%; padding: 14px; background: var(--navy); color: white; border: none; border-radius: var(--radius-sm); font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s; }
+  .detail-cta:hover { background: var(--primary-dark); }
+
   /* ── 고객 사전입력 (고객용) ── */
   #screen-intake { background: var(--bg); }
   #screen-intake .content { padding: 32px 20px; max-width: 680px; margin: 0 auto; flex: 1; }
@@ -610,6 +626,47 @@
           <div id="customer-list-full"></div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     고객 상세 화면
+═══════════════════════════════════════════ -->
+<div id="screen-customer-detail" class="screen">
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon"><img src="logo.png" style="width:36px;height:36px;object-fit:contain;border-radius:8px"></div>
+      <div class="logo-text"><h1>TouchCare</h1><p>고객 상세</p></div>
+    </div>
+    <div class="header-right">
+      <button onclick="showScreen('dashboard')" style="padding:8px 16px;border:1.5px solid var(--border);background:white;border-radius:8px;font-size:13px;cursor:pointer;font-weight:600">← 대시보드</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="patient-banner" style="margin-bottom:20px">
+      <div class="patient-avatar-lg" id="detail-avatar">-</div>
+      <div class="patient-info-main">
+        <div style="font-size:11px;opacity:0.65;margin-bottom:3px">고객 정보</div>
+        <h2 id="detail-name">-</h2>
+        <p id="detail-sub" style="font-size:13px;opacity:0.7;margin-top:2px">-</p>
+      </div>
+      <div class="patient-stats">
+        <div class="patient-stat">
+          <div class="lbl">총 방문</div>
+          <div class="num" id="detail-visit-count">-</div>
+        </div>
+        <div class="patient-stat-divider"></div>
+        <div class="patient-stat">
+          <div class="lbl">첫 방문일</div>
+          <div class="num" id="detail-first-visit" style="font-size:14px">-</div>
+        </div>
+      </div>
+    </div>
+    <button class="detail-cta" onclick="openTherapistNote(window._detailCustomerId)">+ 오늘 소견 입력하기</button>
+    <div class="card">
+      <div class="card-header"><h3>케어 히스토리</h3><p id="detail-history-count"></p></div>
+      <div id="customer-visit-history"></div>
     </div>
   </div>
 </div>
@@ -1193,12 +1250,21 @@ const COLORS = ['#e8a020','#1a6b8a','#2ba0a0','#2d8a4e','#9b59b6','#c0392b','#e6
 // ══════════════════════════════════════════════
 // 화면 전환
 // ══════════════════════════════════════════════
-function showScreen(name) {
+function showScreen(name, skipHistory = false) {
+  if (!skipHistory && !urlPhone) {
+    history.pushState({ screen: name }, '', '?screen=' + name);
+  }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('screen-' + name).classList.add('active');
+  const el = document.getElementById('screen-' + name);
+  if (el) el.classList.add('active');
   if (name === 'dashboard') loadDashboard();
   if (name === 'report') initReport();
 }
+
+window.addEventListener('popstate', (e) => {
+  const screen = e.state && e.state.screen ? e.state.screen : 'login';
+  showScreen(screen, true);
+});
 
 // ══════════════════════════════════════════════
 // 날짜/시간
@@ -1288,8 +1354,48 @@ async function loadDashboard() {
   const { data: customers } = await db.from('customers').select('*').order('created_at', { ascending: false });
   const { data: visits } = await db.from('visits').select('*').eq('visit_date', new Date().toISOString().split('T')[0]);
 
-  allCustomers = customers || [];
+  const dbCustomers = customers || [];
   allTodayVisits = visits || [];
+
+  if (dbCustomers.length === 0) {
+    allCustomers = [
+      { id:'demo-1',  name:'김민서',  age:45, phone:'010-1234-5678', main_symptom:'어깨 결림',       visit_count:38, last_visit:'2026.04.18', is_vip:true },
+      { id:'demo-2',  name:'이준호',  age:52, phone:'010-2345-6789', main_symptom:'허리 통증',       visit_count:12, last_visit:'2026.04.15', is_vip:false },
+      { id:'demo-3',  name:'박서연',  age:38, phone:'010-3456-7890', main_symptom:'두통·목 결림',   visit_count:64, last_visit:'2026.04.21', is_vip:true },
+      { id:'demo-4',  name:'최지훈',  age:41, phone:'010-4567-8901', main_symptom:'무릎 근육통',    visit_count:7,  last_visit:'2026.04.10', is_vip:false },
+      { id:'demo-5',  name:'정수아',  age:29, phone:'010-5678-9012', main_symptom:'손목·팔 피로',   visit_count:3,  last_visit:'2026.04.19', is_vip:false },
+      { id:'demo-6',  name:'한도현',  age:56, phone:'010-6789-0123', main_symptom:'종아리 부종',    visit_count:21, last_visit:'2026.04.17', is_vip:false },
+      { id:'demo-7',  name:'윤지영',  age:33, phone:'010-7890-1234', main_symptom:'어깨 결림',      visit_count:15, last_visit:'2026.05.01', is_vip:false },
+      { id:'demo-8',  name:'강민준',  age:44, phone:'010-8901-2345', main_symptom:'허리 디스크',    visit_count:42, last_visit:'2026.04.28', is_vip:true },
+      { id:'demo-9',  name:'오세진',  age:37, phone:'010-9012-3456', main_symptom:'목 결림',        visit_count:8,  last_visit:'2026.04.22', is_vip:false },
+      { id:'demo-10', name:'임하늘',  age:28, phone:'010-0123-4567', main_symptom:'두통',           visit_count:2,  last_visit:'2026.05.10', is_vip:false },
+      { id:'demo-11', name:'서지우',  age:61, phone:'010-1234-5670', main_symptom:'오십견',         visit_count:55, last_visit:'2026.05.05', is_vip:true },
+      { id:'demo-12', name:'배수현',  age:49, phone:'010-2345-6780', main_symptom:'골반 통증',      visit_count:19, last_visit:'2026.04.30', is_vip:false },
+      { id:'demo-13', name:'황민기',  age:35, phone:'010-3456-7891', main_symptom:'종아리 경련',    visit_count:6,  last_visit:'2026.04.25', is_vip:false },
+      { id:'demo-14', name:'조예린',  age:27, phone:'010-4567-8902', main_symptom:'손목 통증',      visit_count:4,  last_visit:'2026.05.08', is_vip:false },
+      { id:'demo-15', name:'신동혁',  age:53, phone:'010-5678-9013', main_symptom:'허리 협착',      visit_count:33, last_visit:'2026.04.20', is_vip:true },
+      { id:'demo-16', name:'류지수',  age:31, phone:'010-6789-0124', main_symptom:'목·어깨 통증',  visit_count:9,  last_visit:'2026.05.03', is_vip:false },
+      { id:'demo-17', name:'문성훈',  age:48, phone:'010-7890-1235', main_symptom:'무릎 관절통',    visit_count:27, last_visit:'2026.04.26', is_vip:false },
+      { id:'demo-18', name:'전미래',  age:39, phone:'010-8901-2346', main_symptom:'어깨 결림',      visit_count:11, last_visit:'2026.05.07', is_vip:false },
+      { id:'demo-19', name:'안준서',  age:22, phone:'010-9012-3457', main_symptom:'운동 후 근육통', visit_count:1,  last_visit:'2026.05.12', is_vip:false },
+      { id:'demo-20', name:'남하린',  age:43, phone:'010-0123-4568', main_symptom:'허리 통증',      visit_count:16, last_visit:'2026.04.29', is_vip:false },
+      { id:'demo-21', name:'송재원',  age:58, phone:'010-1111-2222', main_symptom:'경추 디스크',    visit_count:47, last_visit:'2026.05.02', is_vip:true },
+      { id:'demo-22', name:'백지혜',  age:36, phone:'010-2222-3333', main_symptom:'골반 불균형',    visit_count:13, last_visit:'2026.05.06', is_vip:false },
+      { id:'demo-23', name:'고은성',  age:51, phone:'010-3333-4444', main_symptom:'오십견',         visit_count:31, last_visit:'2026.04.27', is_vip:true },
+      { id:'demo-24', name:'차민호',  age:46, phone:'010-4444-5555', main_symptom:'하체 부종',      visit_count:18, last_visit:'2026.05.04', is_vip:false },
+      { id:'demo-25', name:'양수진',  age:32, phone:'010-5555-6666', main_symptom:'손목·팔 피로',   visit_count:5,  last_visit:'2026.05.09', is_vip:false },
+      { id:'demo-26', name:'허재원',  age:67, phone:'010-6666-7777', main_symptom:'전신 피로',      visit_count:72, last_visit:'2026.05.01', is_vip:true },
+      { id:'demo-27', name:'천보람',  age:25, phone:'010-7777-8888', main_symptom:'스트레스성 두통', visit_count:2, last_visit:'2026.05.11', is_vip:false },
+      { id:'demo-28', name:'마지혜',  age:55, phone:'010-8888-9999', main_symptom:'무릎 연골 손상', visit_count:24, last_visit:'2026.04.24', is_vip:false },
+      { id:'demo-29', name:'진우석',  age:40, phone:'010-9999-0000', main_symptom:'어깨 충돌 증후군', visit_count:10, last_visit:'2026.05.05', is_vip:false },
+      { id:'demo-30', name:'표나연',  age:34, phone:'010-1010-2020', main_symptom:'허리 근막염',    visit_count:7,  last_visit:'2026.05.08', is_vip:false },
+      { id:'demo-31', name:'국민준',  age:42, phone:'010-2020-3030', main_symptom:'목 디스크',      visit_count:29, last_visit:'2026.04.23', is_vip:false },
+      { id:'demo-32', name:'태소희',  age:30, phone:'010-3030-4040', main_symptom:'갱년기 근육통',  visit_count:14, last_visit:'2026.05.06', is_vip:false },
+    ];
+  } else {
+    allCustomers = dbCustomers;
+  }
+
   const todayVisits = allTodayVisits;
 
   const done = todayVisits.filter(v => v.status === 'completed').length;
@@ -1313,56 +1419,70 @@ async function loadDashboard() {
 function renderCustomerList(customers) {
   filteredCustomers = customers;
   const list = document.getElementById('customer-list');
-  const DEMO = [
-    { name:'김민서', age:45, phone:'010-1234-5678', isVip:true,  av:'김민', avColor:'#1a6b8a', visits:38, lastDate:'2026.04.18', daysAgo:5,  sym:'어깨 결림',   symBg:'#fde8e6', symFg:'#c0392b', apptDate:'오늘 14:30',  apptCls:'appt-today', apptDesc:'전신 관리·60분' },
-    { name:'이준호', age:52, phone:'010-2345-6789', isVip:false, av:'이준', avColor:'#e8a020', visits:12, lastDate:'2026.04.15', daysAgo:8,  sym:'허리 통증',   symBg:'#fef3e0', symFg:'#c07800', apptDate:'4월 26일(일)', apptCls:'appt-soon',  apptDesc:'척추 집중·90분' },
-    { name:'박서연', age:38, phone:'010-3456-7890', isVip:true,  av:'박서', avColor:'#2ba0a0', visits:64, lastDate:'2026.04.21', daysAgo:2,  sym:'두통·목 결림', symBg:'#fff3cd', symFg:'#856404', apptDate:'4월 28일(화)', apptCls:'appt-soon',  apptDesc:'두경부 케어·45분' },
-    { name:'최지훈', age:41, phone:'010-4567-8901', isVip:false, av:'최지', avColor:'#2d8a4e', visits:7,  lastDate:'2026.04.10', daysAgo:13, sym:'무릎 근육통', symBg:'#e6f5ec', symFg:'#2d8a4e', apptDate:'5월 2일(토)',  apptCls:'appt-normal',apptDesc:'하체 집중·60분' },
-    { name:'정수아', age:29, phone:'010-5678-9012', isVip:false, av:'정수', avColor:'#9b59b6', visits:3,  lastDate:'2026.04.19', daysAgo:4,  sym:'손목·팔 피로', symBg:'#e8f4f8', symFg:'#1a6b8a', apptDate:'4월 25일(토)', apptCls:'appt-normal',apptDesc:'상체 이완·45분' },
-    { name:'한도현', age:56, phone:'010-6789-0123', isVip:false, av:'한도', avColor:'#7f5c3a', visits:21, lastDate:'2026.04.17', daysAgo:6,  sym:'종아리 부종', symBg:'#f3e8ff', symFg:'#9b59b6', apptDate:null, apptCls:'appt-none', apptDesc:null },
-  ];
 
-  const total = customers.length || DEMO.length;
-  let sourceRows;
   if (!customers.length) {
-    sourceRows = DEMO.map((_,i) => ({ id:'demo-'+i }));
-  } else if (showAllMode) {
-    sourceRows = customers;
-  } else {
-    const start = (currentPage - 1) * pageSize;
-    sourceRows = customers.slice(start, start + pageSize);
+    list.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted)">고객 데이터가 없습니다</div>';
+    const countEl = document.getElementById('customer-list-count');
+    if (countEl) countEl.textContent = '0명 표시 중 · 전체 0명';
+    return;
   }
 
-  // 카운트 표시
-  const countEl = document.getElementById('customer-list-count');
-  if (countEl) countEl.textContent = `${sourceRows.length}명 표시 중 · 전체 ${total}명`;
+  const total = customers.length;
+  let rows;
+  if (showAllMode) {
+    rows = customers;
+  } else {
+    const start = (currentPage - 1) * pageSize;
+    rows = customers.slice(start, start + pageSize);
+  }
 
-  const rows = sourceRows;
+  const countEl = document.getElementById('customer-list-count');
+  if (countEl) countEl.textContent = `${rows.length}명 표시 중 · 전체 ${total}명`;
+
+  const AVG_COLORS = ['#e8a020','#1a6b8a','#2ba0a0','#2d8a4e','#9b59b6','#c0392b','#e67e22','#16a085'];
+  const startIdx = showAllMode ? 0 : (currentPage - 1) * pageSize;
   list.innerHTML = rows.map((c, i) => {
-    const d = DEMO[i] || DEMO[DEMO.length-1];
-    const hasIntake = c.id.startsWith('demo-')
-      ? (i === 0)
+    const globalIdx = startIdx + i;
+    const avColor = AVG_COLORS[globalIdx % AVG_COLORS.length];
+    const av = c.name ? c.name.substring(0, 2) : '??';
+    const hasIntake = String(c.id).startsWith('demo-')
+      ? false
       : allTodayVisits.some(v => v.customer_id === c.id && v.pain_area);
-    const apptCell = d.apptDate
-      ? `<span class="appt-badge ${d.apptCls}">● ${d.apptDate}<div class="appt-desc">${d.apptDesc}</div></span>`
-      : `<div><div class="appt-none">미예약</div><div style="font-size:11px;color:var(--danger);margin-top:2px">연락 필요</div></div>`;
-    return `<div class="table-row" onclick="openTherapistNote('${c.id}')">
+    const sym = c.main_symptom || '정보 없음';
+    const { bg: symBg, fg: symFg } = getSymptomStyle(sym);
+    const appt = c.next_appointment;
+    const apptCell = (appt && appt !== '미예약')
+      ? `<span class="appt-badge appt-normal">● ${appt}</span>`
+      : `<div><div class="appt-none">미예약</div></div>`;
+    return `<div class="table-row" onclick="openCustomerDetail('${c.id}')">
       <div class="customer-info">
-        <div class="customer-avatar" style="background:${d.avColor};font-size:12px">${d.av}</div>
+        <div class="customer-avatar" style="background:${avColor};font-size:12px">${av}</div>
         <div>
-          <div class="customer-name">${d.name}${d.isVip?'<span class="vip-badge">VIP</span>':''}${hasIntake?'<span class="intake-done-badge">문진완료</span>':''}</div>
-          <div class="customer-detail">${d.age}세 · ${d.phone}</div>
+          <div class="customer-name">${c.name||'-'}${c.is_vip?'<span class="vip-badge">VIP</span>':''}${hasIntake?'<span class="intake-done-badge">문진완료</span>':''}</div>
+          <div class="customer-detail">${c.age||'-'}세 · ${c.phone||'-'}</div>
         </div>
       </div>
-      <div class="visit-count">${d.visits}회</div>
-      <div style="font-size:13px;color:var(--text-muted)">${d.lastDate}<br><span style="font-size:11px">${d.daysAgo}일 전</span></div>
-      <div><span class="symptom-tag" style="background:${d.symBg};color:${d.symFg}">${d.sym}</span></div>
+      <div class="visit-count">${c.visit_count||1}회</div>
+      <div style="font-size:13px;color:var(--text-muted)">${c.last_visit||'-'}</div>
+      <div><span class="symptom-tag" style="background:${symBg};color:${symFg}">${sym}</span></div>
       <div>${apptCell}</div>
       <div onclick="event.stopPropagation()">
-        <button class="intake-link-btn" onclick="sendIntakeLink({name:'${d.name}',phone:'${d.phone}'})">📋 문진 링크</button>
+        <button class="intake-link-btn" onclick="sendIntakeLink({name:'${c.name}',phone:'${c.phone}'})">📋 문진 링크</button>
       </div>
     </div>`;
   }).join('');
+}
+
+function getSymptomStyle(sym) {
+  if (!sym || sym === '정보 없음') return { bg:'#f0f4f8', fg:'#6b7a8d' };
+  if (sym.includes('어깨') || sym.includes('결림') || sym.includes('충돌')) return { bg:'#fde8e6', fg:'#c0392b' };
+  if (sym.includes('허리') || sym.includes('디스크') || sym.includes('협착') || sym.includes('근막')) return { bg:'#fef3e0', fg:'#c07800' };
+  if (sym.includes('두통') || sym.includes('목') || sym.includes('경추')) return { bg:'#fff3cd', fg:'#856404' };
+  if (sym.includes('무릎') || sym.includes('관절') || sym.includes('연골')) return { bg:'#e6f5ec', fg:'#2d8a4e' };
+  if (sym.includes('손목') || sym.includes('팔') || sym.includes('손')) return { bg:'#e8f4f8', fg:'#1a6b8a' };
+  if (sym.includes('종아리') || sym.includes('하체') || sym.includes('부종') || sym.includes('골반')) return { bg:'#f3e8ff', fg:'#9b59b6' };
+  if (sym.includes('전신') || sym.includes('피로') || sym.includes('스트레스')) return { bg:'#f0f0ff', fg:'#5c6bc0' };
+  return { bg:'#f0f4f8', fg:'#6b7a8d' };
 }
 
 function filterCustomers(type) {
@@ -1376,6 +1496,61 @@ function filterCustomers(type) {
   filteredCustomers = result;
   renderCustomerList(filteredCustomers);
   renderPagination();
+}
+
+// ══════════════════════════════════════════════
+// 고객 상세 화면
+// ══════════════════════════════════════════════
+async function openCustomerDetail(customerId) {
+  window._detailCustomerId = customerId;
+
+  if (String(customerId).startsWith('demo-')) {
+    const customer = allCustomers.find(c => c.id === customerId) || {};
+    currentCustomer = customer;
+    renderCustomerDetailUI(customer, []);
+    showScreen('customer-detail');
+    return;
+  }
+
+  const { data: customer } = await db.from('customers').select('*').eq('id', customerId).single();
+  if (!customer) { showToast('고객 정보를 불러올 수 없습니다.', 'error'); return; }
+  currentCustomer = customer;
+
+  const { data: visits } = await db.from('visits').select('*').eq('customer_id', customerId).order('visit_date', { ascending: false });
+  renderCustomerDetailUI(customer, visits || []);
+  showScreen('customer-detail');
+}
+
+function renderCustomerDetailUI(customer, visits) {
+  document.getElementById('detail-avatar').textContent = customer.name ? customer.name.substring(0,2) : '?';
+  document.getElementById('detail-name').textContent = (customer.name || '-') + ' 님';
+  document.getElementById('detail-sub').textContent = `${customer.age||'-'}세 · ${customer.phone||'-'}`;
+  document.getElementById('detail-visit-count').textContent = (customer.visit_count || visits.length || 0) + '회';
+  const firstVisit = visits.length ? visits[visits.length-1].visit_date : (customer.last_visit || '-');
+  document.getElementById('detail-first-visit').textContent = firstVisit;
+  document.getElementById('detail-history-count').textContent = `총 ${visits.length}건`;
+
+  const histEl = document.getElementById('customer-visit-history');
+  if (!visits.length) {
+    histEl.innerHTML = '<div style="padding:36px;text-align:center;color:var(--text-muted)"><div style="font-size:28px;margin-bottom:8px">📋</div><div>아직 방문 기록이 없습니다</div></div>';
+    return;
+  }
+  histEl.innerHTML = visits.map((v, i) => `
+    <div class="visit-history-item">
+      <div class="visit-history-meta">
+        <div class="visit-date-label">${(v.visit_date||'').replace(/-/g,'.')}</div>
+        <span class="visit-round-badge">${v.visit_number||visits.length-i}회차</span>
+      </div>
+      <div class="visit-history-body">
+        ${v.pain_area ? `<div class="visit-history-chips">
+          <span class="condition-chip chip-pain">${v.pain_area}</span>
+          ${v.pain_level ? `<span class="condition-chip chip-level">${v.pain_level}/10</span>` : ''}
+        </div>` : ''}
+        ${v.therapist_notes ? `<div class="visit-history-note">${v.therapist_notes.substring(0,80)}${v.therapist_notes.length>80?'…':''}</div>` : ''}
+        ${!v.pain_area && !v.therapist_notes ? '<div style="font-size:12px;color:var(--text-muted)">기록 없음</div>' : ''}
+      </div>
+      <button class="btn-detail-action" onclick="openTherapistNote('${customer.id}')">소견 보기·수정</button>
+    </div>`).join('');
 }
 
 // ══════════════════════════════════════════════
@@ -1997,6 +2172,7 @@ function showToast(msg, type='') {
 // 초기화
 initDates();
 updatePain(4);
+history.replaceState({ screen: 'login' }, '', window.location.href);
 
 // 안마사 세션 복원 (새로고침 유지)
 if (sessionStorage.getItem('tc_role') === 'therapist') {
