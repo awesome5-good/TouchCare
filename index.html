@@ -513,16 +513,27 @@
       </div>
       <div class="main-grid">
         <div class="card">
-          <div class="card-header">
+          <div class="card-header" style="flex-wrap:wrap;gap:10px">
             <div>
               <h3>고객 목록</h3>
               <p id="customer-count-label">전체 0명 · 이번 달 방문 0명</p>
             </div>
-            <div class="card-filter">
-              <button class="filter-btn active" onclick="filterCustomers('all')">전체</button>
-              <button class="filter-btn" onclick="filterCustomers('vip')">단골</button>
-              <button class="filter-btn" onclick="filterCustomers('new')">신규</button>
-              <button class="filter-btn" onclick="filterCustomers('inactive')">휴면</button>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <input type="text" id="customer-search" placeholder="고객 이름 검색..."
+                oninput="searchCustomers(this.value)"
+                style="padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;width:168px;outline:none;font-family:inherit">
+              <select id="page-size-select" onchange="changePageSize(this.value)"
+                style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;cursor:pointer">
+                <option value="10">10명씩</option>
+                <option value="20">20명씩</option>
+                <option value="50">50명씩</option>
+              </select>
+              <div class="card-filter">
+                <button class="filter-btn active" onclick="filterCustomers('all')">전체</button>
+                <button class="filter-btn" onclick="filterCustomers('vip')">단골</button>
+                <button class="filter-btn" onclick="filterCustomers('new')">신규</button>
+                <button class="filter-btn" onclick="filterCustomers('inactive')">휴면</button>
+              </div>
             </div>
           </div>
           <div class="customer-table">
@@ -537,8 +548,12 @@
           <div id="customer-list"></div>
         </div>
         <div class="customer-table-footer">
-          <span>6명 표시 중 · 전체 287명</span>
-          <a href="#" onclick="showDashTab('customers');return false">전체 고객 보기 ›</a>
+          <span id="customer-list-count">0명 표시 중 · 전체 0명</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div id="pagination-wrap" style="display:flex;gap:4px;align-items:center"></div>
+            <button id="show-all-btn" onclick="toggleShowAll()"
+              style="padding:4px 12px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;cursor:pointer;background:white;color:var(--text-muted)">전체 보기</button>
+          </div>
         </div>
       </div>
         <div>
@@ -1087,8 +1102,9 @@
     <div class="form-group" style="margin-bottom:12px">
       <label style="font-size:13px;font-weight:600;color:var(--text);display:block;margin-bottom:6px">전화번호</label>
       <input type="tel" id="new-intake-phone" placeholder="010-xxxx-xxxx"
+             inputmode="numeric" maxlength="13"
              style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:15px;outline:none;font-family:inherit"
-             oninput="previewNewIntakeLink()"
+             oninput="formatPhoneNumber(this);previewNewIntakeLink()"
              onkeydown="if(event.key==='Enter')generateNewIntakeLink()">
     </div>
     <div id="new-intake-preview" style="display:none">
@@ -1163,6 +1179,10 @@ let tensionData = { neck: null, shoulder: null, back: null, pelvis: null, legs: 
 let selectedBodyPart = null;
 let allCustomers = [];
 let allTodayVisits = [];
+let filteredCustomers = [];
+let currentPage = 1;
+let pageSize = 10;
+let showAllMode = false;
 let urlPhone = '';
 let pinVerified = false;
 let chartInstance = null;
@@ -1284,11 +1304,14 @@ async function loadDashboard() {
   document.getElementById('customer-count-label').textContent = `전체 ${allCustomers.length}명 · 이번 달 방문 ${Math.floor(allCustomers.length*0.4)}명`;
   document.getElementById('dash-subtitle').innerHTML = document.getElementById('today-date').textContent + ` · 오늘 예약 <strong>${todayVisits.length || 12}건</strong>`;
 
-  renderCustomerList(allCustomers);
+  filteredCustomers = [...allCustomers];
+  renderCustomerList(filteredCustomers);
+  renderPagination();
   renderSchedule();
 }
 
 function renderCustomerList(customers) {
+  filteredCustomers = customers;
   const list = document.getElementById('customer-list');
   const DEMO = [
     { name:'김민서', age:45, phone:'010-1234-5678', isVip:true,  av:'김민', avColor:'#1a6b8a', visits:38, lastDate:'2026.04.18', daysAgo:5,  sym:'어깨 결림',   symBg:'#fde8e6', symFg:'#c0392b', apptDate:'오늘 14:30',  apptCls:'appt-today', apptDesc:'전신 관리·60분' },
@@ -1298,7 +1321,23 @@ function renderCustomerList(customers) {
     { name:'정수아', age:29, phone:'010-5678-9012', isVip:false, av:'정수', avColor:'#9b59b6', visits:3,  lastDate:'2026.04.19', daysAgo:4,  sym:'손목·팔 피로', symBg:'#e8f4f8', symFg:'#1a6b8a', apptDate:'4월 25일(토)', apptCls:'appt-normal',apptDesc:'상체 이완·45분' },
     { name:'한도현', age:56, phone:'010-6789-0123', isVip:false, av:'한도', avColor:'#7f5c3a', visits:21, lastDate:'2026.04.17', daysAgo:6,  sym:'종아리 부종', symBg:'#f3e8ff', symFg:'#9b59b6', apptDate:null, apptCls:'appt-none', apptDesc:null },
   ];
-  const rows = customers.length ? customers.slice(0,6) : DEMO.map((_,i)=>({id:'demo-'+i}));
+
+  const total = customers.length || DEMO.length;
+  let sourceRows;
+  if (!customers.length) {
+    sourceRows = DEMO.map((_,i) => ({ id:'demo-'+i }));
+  } else if (showAllMode) {
+    sourceRows = customers;
+  } else {
+    const start = (currentPage - 1) * pageSize;
+    sourceRows = customers.slice(start, start + pageSize);
+  }
+
+  // 카운트 표시
+  const countEl = document.getElementById('customer-list-count');
+  if (countEl) countEl.textContent = `${sourceRows.length}명 표시 중 · 전체 ${total}명`;
+
+  const rows = sourceRows;
   list.innerHTML = rows.map((c, i) => {
     const d = DEMO[i] || DEMO[DEMO.length-1];
     const hasIntake = c.id.startsWith('demo-')
@@ -1329,9 +1368,91 @@ function renderCustomerList(customers) {
 function filterCustomers(type) {
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   event.target.classList.add('active');
-  if (type === 'all') renderCustomerList(allCustomers);
-  else if (type === 'vip') renderCustomerList(allCustomers.filter(c => c.is_vip));
-  else renderCustomerList(allCustomers);
+  currentPage = 1;
+  let result;
+  if (type === 'all') result = allCustomers;
+  else if (type === 'vip') result = allCustomers.filter(c => c.is_vip);
+  else result = allCustomers;
+  filteredCustomers = result;
+  renderCustomerList(filteredCustomers);
+  renderPagination();
+}
+
+// ══════════════════════════════════════════════
+// 고객 목록 검색 / 페이지네이션
+// ══════════════════════════════════════════════
+function searchCustomers(query) {
+  currentPage = 1;
+  filteredCustomers = query.trim()
+    ? allCustomers.filter(c => c.name && c.name.includes(query.trim()))
+    : [...allCustomers];
+  renderCustomerList(filteredCustomers);
+  renderPagination();
+}
+
+function changePageSize(size) {
+  pageSize = parseInt(size);
+  currentPage = 1;
+  renderCustomerList(filteredCustomers);
+  renderPagination();
+}
+
+function goToPage(page) {
+  const total = filteredCustomers.length || 6;
+  const totalPages = Math.ceil(total / pageSize);
+  if (page < 1 || page > totalPages) return;
+  currentPage = page;
+  renderCustomerList(filteredCustomers);
+  renderPagination();
+  const tbl = document.querySelector('.customer-table');
+  if (tbl) tbl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function toggleShowAll() {
+  showAllMode = !showAllMode;
+  currentPage = 1;
+  renderCustomerList(filteredCustomers);
+  renderPagination();
+}
+
+function renderPagination() {
+  const btnEl = document.getElementById('show-all-btn');
+  const wrap = document.getElementById('pagination-wrap');
+  if (!wrap) return;
+
+  if (showAllMode) {
+    wrap.style.display = 'none';
+    if (btnEl) btnEl.textContent = '페이지 보기';
+    return;
+  }
+  wrap.style.display = 'flex';
+  if (btnEl) btnEl.textContent = '전체 보기';
+
+  const total = filteredCustomers.length || 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  if (totalPages <= 1) { wrap.innerHTML = ''; return; }
+
+  let startPage = Math.max(1, currentPage - 2);
+  let endPage = Math.min(totalPages, startPage + 4);
+  if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
+
+  const btnStyle = (active) =>
+    `padding:4px 10px;border:1.5px solid ${active?'var(--primary)':'var(--border)'};border-radius:6px;cursor:pointer;background:${active?'var(--primary)':'white'};color:${active?'white':'var(--text-muted)'};font-size:13px;`;
+
+  let html = `<button onclick="goToPage(${currentPage-1})" style="${btnStyle(false)}" ${currentPage===1?'disabled':''}>←</button>`;
+  for (let i = startPage; i <= endPage; i++) {
+    html += `<button onclick="goToPage(${i})" style="${btnStyle(i===currentPage)}">${i}</button>`;
+  }
+  html += `<button onclick="goToPage(${currentPage+1})" style="${btnStyle(false)}" ${currentPage===totalPages?'disabled':''}>→</button>`;
+  wrap.innerHTML = html;
+}
+
+function formatPhoneNumber(input) {
+  let value = input.value.replace(/\D/g, '');
+  if (value.length > 11) value = value.slice(0, 11);
+  if (value.length <= 3) input.value = value;
+  else if (value.length <= 7) input.value = value.slice(0,3) + '-' + value.slice(3);
+  else input.value = value.slice(0,3) + '-' + value.slice(3,7) + '-' + value.slice(7);
 }
 
 function renderSchedule() {
