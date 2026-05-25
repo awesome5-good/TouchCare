@@ -110,6 +110,7 @@
   .table-row { display: grid; grid-template-columns: 2fr 1fr 1.2fr 1.5fr 1.5fr 100px; padding: 14px 20px; border-bottom: 1px solid var(--border); align-items: center; cursor: pointer; transition: background 0.15s; }
   .intake-link-btn { padding: 5px 10px; background: var(--teal-light); color: var(--teal); border: 1.5px solid var(--teal); border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
   .intake-link-btn:hover { background: var(--teal); color: white; }
+  .intake-done-badge { display: inline-block; background: var(--success-light); color: var(--success); font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-left: 4px; vertical-align: middle; }
   /* 모달 */
   .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; }
   .modal-card { background: white; border-radius: var(--radius-lg); padding: 32px; width: 100%; max-width: 480px; box-shadow: var(--shadow-lg); position: relative; }
@@ -386,12 +387,16 @@
         <label>이름</label>
         <input type="text" id="customer-name" placeholder="홍길동">
       </div>
-      <div class="form-group">
+      <div class="form-group" id="customer-phone-group">
         <label>예약 전화번호</label>
         <input type="tel" id="customer-phone" placeholder="010-1234-5678">
       </div>
+      <div class="form-group" id="customer-pin-group" style="display:none">
+        <label>전화번호 뒷 4자리</label>
+        <input type="number" id="customer-pin" placeholder="전화번호 뒷 4자리" maxlength="4" style="letter-spacing:4px;font-size:18px;text-align:center">
+      </div>
       <button class="btn-primary" onclick="loginCustomer()">오늘 방문 전 입력하기</button>
-      <div class="login-hint">예약하신 이름과 전화번호로 본인 확인 후 방문 전 건강 정보를 입력합니다</div>
+      <div class="login-hint" id="customer-login-hint">예약하신 이름과 전화번호로 본인 확인 후 방문 전 건강 정보를 입력합니다</div>
     </div>
   </div>
 </div>
@@ -812,7 +817,7 @@
       <div class="condition-summary-title">
         <span class="condition-badge">고객 입력</span>오늘 컨디션 요약
       </div>
-      <div class="condition-table">
+      <div id="cond-table" class="condition-table">
         <div class="condition-row">
           <span class="condition-key">불편 부위·통증</span>
           <div class="condition-val" id="cond-pain">
@@ -832,6 +837,11 @@
           <span class="condition-key">최근 특이사항</span>
           <span class="condition-val" id="cond-special">입력 없음</span>
         </div>
+      </div>
+      <div id="cond-no-intake" style="display:none;padding:24px 16px;text-align:center;color:var(--text-muted)">
+        <div style="font-size:28px;margin-bottom:8px">📋</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">고객이 아직 문진을 입력하지 않았습니다</div>
+        <div style="font-size:12px">방문 전 문진 링크를 발송해보세요</div>
       </div>
     </div>
 
@@ -1096,6 +1106,8 @@ let currentVisit = null;
 let tensionData = { neck: null, shoulder: null, back: null, pelvis: null, legs: null };
 let selectedBodyPart = null;
 let allCustomers = [];
+let allTodayVisits = [];
+let urlPhone = '';
 let chartInstance = null;
 
 // 색상 팔레트
@@ -1155,28 +1167,45 @@ function loginTherapist() {
 }
 
 async function loginCustomer() {
-  const phone = document.getElementById('customer-phone').value.trim();
   const name = document.getElementById('customer-name').value.trim();
-  if (!name) { showToast('이름을 입력해주세요.', 'error'); return; }
-  if (!phone) { showToast('전화번호를 입력해주세요.', 'error'); return; }
 
-  // phone으로 기존 고객 조회
-  const { data: existing } = await db.from('customers').select('*').eq('phone', phone).single();
-  if (existing) {
-    currentCustomer = existing;
+  if (urlPhone) {
+    // ── URL phone 모드: PIN(뒷 4자리) 확인
+    const pin = String(document.getElementById('customer-pin').value).trim();
+    if (!pin || pin.length !== 4) { showToast('전화번호 뒷 4자리를 입력해주세요.', 'error'); return; }
+    if (!urlPhone.endsWith(pin)) { showToast('전화번호 뒷 4자리가 맞지 않습니다.', 'error'); return; }
+
+    const { data: existing } = await db.from('customers').select('*').eq('phone', urlPhone).single();
+    if (existing) {
+      currentCustomer = existing;
+      showScreen('intake');
+      return;
+    }
+    // 신규 고객 생성 (이름 필요)
+    if (!name) { showToast('이름을 입력해주세요.', 'error'); return; }
+    const { data: created, error } = await db.from('customers').insert([{ name, phone: urlPhone, created_at: new Date().toISOString() }]).select().single();
+    if (error) { showToast('오류가 발생했습니다. 다시 시도해주세요.', 'error'); return; }
+    currentCustomer = created;
+    showToast(`${name}님, 처음 방문하셨군요!`, 'success');
     showScreen('intake');
-    return;
-  }
+  } else {
+    // ── 직접 입력 모드: 이름 + 전체 전화번호
+    const phone = document.getElementById('customer-phone').value.trim();
+    if (!name) { showToast('이름을 입력해주세요.', 'error'); return; }
+    if (!phone) { showToast('전화번호를 입력해주세요.', 'error'); return; }
 
-  // 없으면 신규 고객 생성
-  const { data: created, error } = await db.from('customers').insert([{ name, phone, created_at: new Date().toISOString() }]).select().single();
-  if (error) {
-    showToast('확인 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
-    return;
+    const { data: existing } = await db.from('customers').select('*').eq('phone', phone).single();
+    if (existing) {
+      currentCustomer = existing;
+      showScreen('intake');
+      return;
+    }
+    const { data: created, error } = await db.from('customers').insert([{ name, phone, created_at: new Date().toISOString() }]).select().single();
+    if (error) { showToast('확인 중 오류가 발생했습니다. 다시 시도해주세요.', 'error'); return; }
+    currentCustomer = created;
+    showToast(`${name}님, 처음 방문하셨군요! 건강 정보를 입력해주세요.`, 'success');
+    showScreen('intake');
   }
-  currentCustomer = created;
-  showToast(`${name}님, 처음 방문하셨군요! 건강 정보를 입력해주세요.`, 'success');
-  showScreen('intake');
 }
 
 function logout() { showScreen('login'); }
@@ -1189,7 +1218,8 @@ async function loadDashboard() {
   const { data: visits } = await db.from('visits').select('*').eq('visit_date', new Date().toISOString().split('T')[0]);
 
   allCustomers = customers || [];
-  const todayVisits = visits || [];
+  allTodayVisits = visits || [];
+  const todayVisits = allTodayVisits;
 
   const done = todayVisits.filter(v => v.status === 'completed').length;
   const wait = todayVisits.filter(v => v.status === 'scheduled').length;
@@ -1220,6 +1250,9 @@ function renderCustomerList(customers) {
   const rows = customers.length ? customers.slice(0,6) : DEMO.map((_,i)=>({id:'demo-'+i}));
   list.innerHTML = rows.map((c, i) => {
     const d = DEMO[i] || DEMO[DEMO.length-1];
+    const hasIntake = c.id.startsWith('demo-')
+      ? (i === 0)
+      : allTodayVisits.some(v => v.customer_id === c.id && v.pain_area);
     const apptCell = d.apptDate
       ? `<span class="appt-badge ${d.apptCls}">● ${d.apptDate}<div class="appt-desc">${d.apptDesc}</div></span>`
       : `<div><div class="appt-none">미예약</div><div style="font-size:11px;color:var(--danger);margin-top:2px">연락 필요</div></div>`;
@@ -1227,7 +1260,7 @@ function renderCustomerList(customers) {
       <div class="customer-info">
         <div class="customer-avatar" style="background:${d.avColor};font-size:12px">${d.av}</div>
         <div>
-          <div class="customer-name">${d.name}${d.isVip?'<span class="vip-badge">VIP</span>':''}</div>
+          <div class="customer-name">${d.name}${d.isVip?'<span class="vip-badge">VIP</span>':''}${hasIntake?'<span class="intake-done-badge">문진완료</span>':''}</div>
           <div class="customer-detail">${d.age}세 · ${d.phone}</div>
         </div>
       </div>
@@ -1274,28 +1307,45 @@ function renderSchedule() {
 }
 
 async function openTherapistNote(customerId) {
+  if (customerId.startsWith('demo-')) {
+    // 데모 모드: 실제 DB 조회 없이 화면 전환만
+    showScreen('therapist');
+    return;
+  }
   const { data: customer } = await db.from('customers').select('*').eq('id', customerId).single();
   if (!customer) return;
   currentCustomer = customer;
-  const { data: visits } = await db.from('visits').select('*').eq('customer_id', customerId).order('visit_number', { ascending: false });
+
+  const today = new Date().toISOString().split('T')[0];
+  const { data: visits } = await db.from('visits').select('*').eq('customer_id', customerId).order('visit_date', { ascending: false });
   currentVisit = visits ? visits[0] : null;
   const visitNum = visits ? visits.length + 1 : 1;
 
-  document.getElementById('therapist-avatar').textContent = customer.name.substring(0,1);
+  // 오늘 문진 여부 확인
+  const todayIntake = (visits || []).find(v => v.visit_date === today && v.pain_area);
+
+  document.getElementById('therapist-avatar').textContent = customer.name.substring(0,2);
   document.getElementById('therapist-patient-name').textContent = customer.name + ' 님';
-  document.getElementById('therapist-patient-sub').textContent = `${customer.age||'-'}세 · ${customer.phone||'-'}`;
   document.getElementById('therapist-visit-num').textContent = visitNum + '회차';
 
-  const intake = currentVisit;
-  if (intake && intake.pain_area) {
-    const lvl = parseInt(intake.pain_level || 0);
+  const condTable = document.getElementById('cond-table');
+  const condNoIntake = document.getElementById('cond-no-intake');
+
+  if (todayIntake) {
+    condTable.style.display = 'block';
+    condNoIntake.style.display = 'none';
+    const lvl = parseInt(todayIntake.pain_level || 0);
     const lvlLabel = painLabels[lvl] || '';
     document.getElementById('cond-pain').innerHTML =
-      `<span class="condition-chip chip-pain">${intake.pain_area}</span><span class="condition-chip chip-level">${lvl}/10 ${lvlLabel}</span>`;
-    document.getElementById('cond-hospital').textContent = intake.hospital_record || '입력 없음';
-    document.getElementById('cond-medication').textContent = intake.medication || '입력 없음';
-    document.getElementById('cond-special').textContent = intake.special_notes || '입력 없음';
+      `<span class="condition-chip chip-pain">${todayIntake.pain_area}</span><span class="condition-chip chip-level">${lvl}/10 ${lvlLabel}</span>`;
+    document.getElementById('cond-hospital').textContent = todayIntake.hospital_record || '없음';
+    document.getElementById('cond-medication').textContent = todayIntake.medication || '없음';
+    document.getElementById('cond-special').textContent = todayIntake.special_notes || '없음';
+  } else {
+    condTable.style.display = 'none';
+    condNoIntake.style.display = 'block';
   }
+
   tensionData = { neck:null, shoulder:null, back:null, pelvis:null, legs:null };
   showScreen('therapist');
 }
@@ -1755,24 +1805,31 @@ updatePain(4);
   if (!token && !phone) return;
 
   switchLoginTab('customer');
-  if (phone) document.getElementById('customer-phone').value = phone;
 
+  if (phone) {
+    // PIN 모드 설정: 전화번호 입력 숨기고 PIN 표시
+    urlPhone = phone;
+    document.getElementById('customer-phone-group').style.display = 'none';
+    document.getElementById('customer-pin-group').style.display = 'block';
+    document.getElementById('customer-login-hint').textContent = '전화번호 뒷 4자리로 본인 확인 후 방문 전 건강 정보를 입력합니다';
+    // 이름 필드 placeholder 업데이트
+    const nameInput = document.getElementById('customer-name');
+    if (nameInput) nameInput.placeholder = '처음 방문이시면 이름을 입력해주세요';
+    setTimeout(() => document.getElementById('customer-pin').focus(), 300);
+    return; // 버튼 클릭 시 loginCustomer에서 처리
+  }
+
+  // token 방식 (자동 로그인)
   let customer = null;
   if (token) {
     const { data } = await db.from('customers').select('*').eq('token', token).single();
     customer = data;
   }
-  if (!customer && phone) {
-    const { data } = await db.from('customers').select('*').eq('phone', phone).single();
-    customer = data;
-  }
-
   if (customer) {
     currentCustomer = customer;
     showScreen('intake');
   } else {
-    showToast('예약 정보를 확인할 수 없습니다. 이름을 입력해주세요.', 'error');
-    document.getElementById('customer-name').focus();
+    showToast('링크 인증에 실패했습니다. 이름과 전화번호를 입력해주세요.', 'error');
   }
 })();
 </script>
