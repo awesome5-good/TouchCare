@@ -81,9 +81,11 @@
 
   /* ── 대시보드 ── */
   #screen-dashboard .content { padding: 28px 32px; flex: 1; }
-  .dashboard-title { margin-bottom: 24px; }
-  .dashboard-title h2 { font-size: 26px; font-weight: 800; color: var(--text); }
-  .dashboard-title p { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+  .dashboard-title { margin-bottom: 24px; display: flex; align-items: flex-start; justify-content: space-between; }
+  .dashboard-title-text h2 { font-size: 26px; font-weight: 800; color: var(--text); }
+  .dashboard-title-text p { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+  .new-intake-btn { padding: 9px 16px; background: var(--teal-light); color: var(--teal); border: 1.5px solid var(--teal); border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+  .new-intake-btn:hover { background: var(--teal); color: white; }
   .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
   .stat-card { background: white; border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); border: 1px solid var(--border); position: relative; overflow: hidden; }
   .stat-card.primary { background: var(--primary); color: white; }
@@ -450,15 +452,18 @@
     <div class="header-right">
       <button onclick="showDashTab('schedule')" style="padding:8px 16px;border:1.5px solid var(--border);background:white;border-radius:var(--radius-sm);font-size:13px;font-weight:600;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:6px">≡ 주간 리포트</button>
       <button style="padding:8px 18px;background:var(--primary);color:white;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px" onclick="alert('예약 등록 기능은 준비 중입니다')">+ 예약 등록</button>
-      <div class="avatar" onclick="logout()" title="로그아웃">박</div>
+      <button onclick="logout()" style="padding:8px 16px;background:transparent;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;color:var(--text-muted);cursor:pointer">로그아웃</button>
     </div>
   </div>
   <div class="content">
     <!-- 대시보드 메인 탭 -->
     <div class="dash-view active" id="dash-view-main">
       <div class="dashboard-title">
-        <h2>안녕하세요, 김기화 원장님 👋</h2>
-        <p id="dash-subtitle"></p>
+        <div class="dashboard-title-text">
+          <h2>안녕하세요, 김기화 원장님 👋</h2>
+          <p id="dash-subtitle"></p>
+        </div>
+        <button class="new-intake-btn" onclick="openNewIntakeLinkModal()">📋 신규 고객 문진 링크</button>
       </div>
       <div class="stats-grid">
         <div class="stat-card primary">
@@ -1073,6 +1078,34 @@
   </div>
 </div>
 
+<!-- 신규 고객 문진 링크 생성 모달 -->
+<div class="modal-backdrop" id="new-intake-modal" style="display:none" onclick="if(event.target===this)closeNewIntakeModal()">
+  <div class="modal-card">
+    <button class="modal-close-x" onclick="closeNewIntakeModal()">✕</button>
+    <div class="modal-title">📋 신규 고객 문진 링크 생성</div>
+    <div class="modal-sub">전화번호를 입력하면 고객 전용 문진 링크를 생성합니다</div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label style="font-size:13px;font-weight:600;color:var(--text);display:block;margin-bottom:6px">전화번호</label>
+      <input type="tel" id="new-intake-phone" placeholder="010-xxxx-xxxx"
+             style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:15px;outline:none;font-family:inherit"
+             oninput="previewNewIntakeLink()"
+             onkeydown="if(event.key==='Enter')generateNewIntakeLink()">
+    </div>
+    <div id="new-intake-preview" style="display:none">
+      <div class="modal-link-box">
+        <span id="new-intake-link-text" style="flex:1;font-size:12px"></span>
+        <button class="modal-copy-btn" onclick="copyNewIntakeLink()">복사</button>
+      </div>
+      <div class="modal-msg-label">📱 문자 메시지 템플릿</div>
+      <div class="modal-msg-box" id="new-intake-msg"></div>
+    </div>
+    <div class="modal-actions" style="margin-top:4px">
+      <button class="modal-btn-copy" onclick="generateNewIntakeLink()">링크 생성 및 복사</button>
+      <button class="modal-btn-close" onclick="closeNewIntakeModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
 <!-- 리포트 링크 모달 -->
 <div class="modal-backdrop" id="report-modal" style="display:none" onclick="if(event.target===this)closeReportModal()">
   <div class="modal-card">
@@ -1179,6 +1212,8 @@ function loginTherapist() {
   const id = document.getElementById('login-id').value;
   const pw = document.getElementById('login-pw').value;
   if (id === 'kimgihwa' && pw === '1234') {
+    sessionStorage.setItem('tc_role', 'therapist');
+    sessionStorage.setItem('tc_user', id);
     showToast('로그인 성공! 환영합니다 👋', 'success');
     showScreen('dashboard');
   } else {
@@ -1220,7 +1255,11 @@ async function loginNewCustomer() {
 // 하위 호환 (더 이상 직접 사용 안 함)
 function loginCustomer() { loginExistingCustomer(); }
 
-function logout() { showScreen('login'); }
+function logout() {
+  sessionStorage.removeItem('tc_role');
+  sessionStorage.removeItem('tc_user');
+  showScreen('login');
+}
 
 // ══════════════════════════════════════════════
 // 대시보드
@@ -1663,6 +1702,55 @@ function filterCustomersTab(type) {
 }
 
 // ══════════════════════════════════════════════
+// 신규 고객 문진 링크 생성
+// ══════════════════════════════════════════════
+let _newIntakeLink = '';
+let _newIntakeMsg = '';
+
+function openNewIntakeLinkModal() {
+  document.getElementById('new-intake-phone').value = '';
+  document.getElementById('new-intake-preview').style.display = 'none';
+  document.getElementById('new-intake-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('new-intake-phone').focus(), 100);
+}
+
+function closeNewIntakeModal() {
+  document.getElementById('new-intake-modal').style.display = 'none';
+}
+
+function previewNewIntakeLink() {
+  document.getElementById('new-intake-preview').style.display = 'none';
+}
+
+function generateNewIntakeLink() {
+  const phone = document.getElementById('new-intake-phone').value.trim();
+  if (!phone) { showToast('전화번호를 입력해주세요.', 'error'); return; }
+
+  const baseUrl = 'https://touch-care.vercel.app';
+  _newIntakeLink = `${baseUrl}?phone=${encodeURIComponent(phone)}`;
+  _newIntakeMsg = `[천지안마원] 안녕하세요 😊\n방문 전 아래 링크에서 컨디션을 알려주시면\n더 정확하게 케어해드릴 수 있어요! (선택사항)\n→ ${_newIntakeLink}`;
+
+  document.getElementById('new-intake-link-text').textContent = _newIntakeLink;
+  document.getElementById('new-intake-msg').textContent = _newIntakeMsg;
+  document.getElementById('new-intake-preview').style.display = 'block';
+
+  navigator.clipboard.writeText(_newIntakeMsg).catch(() => {});
+  showToast('문자 내용이 복사됐어요! 붙여넣기 후 전송하세요 📱', 'success');
+}
+
+function copyNewIntakeLink() {
+  navigator.clipboard.writeText(_newIntakeLink)
+    .then(() => showToast('링크가 복사됐어요!', 'success'))
+    .catch(() => {
+      const el = document.getElementById('new-intake-link-text');
+      const r = document.createRange(); r.selectNode(el);
+      window.getSelection().removeAllRanges(); window.getSelection().addRange(r);
+      document.execCommand('copy');
+      showToast('링크가 복사됐어요!', 'success');
+    });
+}
+
+// ══════════════════════════════════════════════
 // 리포트 링크 발송
 // ══════════════════════════════════════════════
 let _reportLink = '';
@@ -1788,6 +1876,11 @@ function showToast(msg, type='') {
 // 초기화
 initDates();
 updatePain(4);
+
+// 안마사 세션 복원 (새로고침 유지)
+if (sessionStorage.getItem('tc_role') === 'therapist') {
+  showScreen('dashboard');
+}
 
 // ── URL 파라미터 자동 처리
 (async () => {
