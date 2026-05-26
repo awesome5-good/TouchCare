@@ -1404,7 +1404,9 @@ function showScreen(name, skipHistory = false) {
 
 window.addEventListener('popstate', (e) => {
   const screen = e.state && e.state.screen ? e.state.screen : 'login';
+  const tab = e.state && e.state.tab ? e.state.tab : 'main';
   showScreen(screen, true);
+  if (screen === 'dashboard') setTimeout(() => showDashTab(tab), 0);
 });
 
 // ══════════════════════════════════════════════
@@ -2393,6 +2395,10 @@ function showDashTab(tab, btnEl) {
   }
   if (tab === 'schedule') renderScheduleFull();
   if (tab === 'customers') renderCustomerListFull(allCustomers);
+  // 탭 전환도 히스토리에 저장 (urlPhone 없을 때만)
+  if (!urlPhone) {
+    history.pushState({ screen: 'dashboard', tab: tab }, '', '?screen=dashboard&tab=' + tab);
+  }
 }
 
 function renderScheduleFull() {
@@ -2419,11 +2425,13 @@ function renderScheduleFull() {
     // 문진 박스
     let intakeBox = '';
     if (v && v.pain_area) {
-      intakeBox = `<div style="margin-top:8px;padding:8px 12px;background:var(--primary-light);border-radius:6px;font-size:12px;color:var(--text)">
-        <span style="font-weight:700;color:var(--primary)">📋 문진 완료</span>
-        <span style="margin-left:8px"><span class="condition-chip chip-pain" style="font-size:11px">${v.pain_area}</span></span>
-        <span class="condition-chip chip-level" style="font-size:11px;margin-left:4px">${v.pain_level||'-'}/10</span>
-        ${v.therapist_notes ? `<div style="margin-top:4px;color:var(--text-muted)">${v.therapist_notes.substring(0,60)}…</div>` : ''}
+      intakeBox = `<div style="margin-top:8px;padding:8px 16px;background:var(--primary-light);border-radius:6px;font-size:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <span style="font-weight:700;color:var(--primary);flex-shrink:0">📋 문진 완료</span>
+        <span class="condition-chip chip-pain" style="font-size:11px">${v.pain_area}</span>
+        <span class="condition-chip chip-level" style="font-size:11px">${v.pain_level||'-'}/10</span>
+        ${v.hospital_record ? `<span style="color:var(--text-muted);font-size:11px">🏥 ${v.hospital_record}</span>` : ''}
+        ${v.therapist_notes ? `<span style="color:var(--text-muted);font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📝 ${v.therapist_notes.substring(0,40)}…</span>` : ''}
+        ${v.next_care_recommendation ? `<span style="color:var(--primary);font-size:11px;flex-shrink:0">🎯 ${v.next_care_recommendation.substring(0,20)}…</span>` : ''}
       </div>`;
     } else {
       intakeBox = `<div style="margin-top:8px;padding:8px 12px;background:var(--gray-light);border-radius:6px;font-size:12px;color:var(--text-muted);display:flex;align-items:center;justify-content:space-between">
