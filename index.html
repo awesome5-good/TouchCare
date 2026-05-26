@@ -2065,6 +2065,18 @@ function formatPhoneNumber(input) {
   else input.value = value.slice(0,3) + '-' + value.slice(3,7) + '-' + value.slice(7);
 }
 
+function onScheduleNameClick(el) {
+  const name = el.getAttribute('data-schedule-name');
+  const demoId = el.getAttribute('data-demo-id');
+  const found = (allCustomers || []).find(c => c.name && c.name.trim() === (name||'').trim());
+  const id = found ? found.id : demoId;
+  if (!id) {
+    showToast((name || '해당') + ' 고객 정보를 찾을 수 없습니다', 'error');
+    return;
+  }
+  openCustomerDetail(id);
+}
+
 // 이름으로 고객 ID 찾기
 function findCustomerIdByName(name) {
   if (!name) return null;
@@ -2093,19 +2105,18 @@ function renderSchedule() {
   ];
   const statusMap = { done:'완료', active:'진행 중', wait:'대기', new:'신규' };
   const classMap = { done:'status-done', active:'status-active', wait:'status-wait', new:'status-new' };
-  document.getElementById('schedule-list').innerHTML = schedules.map(s => {
-    const cid = findCustomerIdByName(s.name) || s.demoId || null;
-    const clickHandler = cid ? `openCustomerDetail('${cid}')` : `showToast('고객 정보를 찾을 수 없습니다','error')`;
-    return `<div class="schedule-item">
+  document.getElementById('schedule-list').innerHTML = schedules.map(s => `
+    <div class="schedule-item">
       <div class="schedule-time">${s.time}<div class="schedule-ampm">${s.ampm}</div></div>
       <div class="schedule-bar" style="background:${s.color}"></div>
       <div class="schedule-info">
-        <div class="schedule-name" style="cursor:pointer;color:var(--primary)" onclick="${clickHandler}">${s.name}</div>
+        <div class="schedule-name" style="cursor:pointer;color:var(--primary)"
+          data-schedule-name="${s.name}" data-demo-id="${s.demoId||''}"
+          onclick="onScheduleNameClick(this)">${s.name}</div>
         <div class="schedule-desc">${s.desc}</div>
       </div>
       <div class="schedule-status ${classMap[s.status]}">${statusMap[s.status]}</div>
-    </div>`;
-  }).join('');
+    </div>`).join('');
 }
 
 async function openTherapistNote(customerId) {
@@ -2430,7 +2441,9 @@ function renderScheduleFull() {
         </div>
         <div class="schedule-full-bar" style="background:${s.color};align-self:stretch"></div>
         <div style="flex:1">
-          <div class="schedule-full-name" style="cursor:pointer;color:var(--primary)" onclick="openCustomerByName('${s.name}')">${s.name}</div>
+          <div class="schedule-full-name" style="cursor:pointer;color:var(--primary)"
+            data-schedule-name="${s.name}" data-demo-id="${s.demoId||''}"
+            onclick="onScheduleNameClick(this)">${s.name}</div>
           <div class="schedule-full-desc">${s.desc}</div>
         </div>
         <div class="schedule-full-status ${classMap[s.status]}">${statusMap[s.status]}</div>
