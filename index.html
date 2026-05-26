@@ -1394,7 +1394,11 @@ function showScreen(name, skipHistory = false) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const el = document.getElementById('screen-' + name);
   if (el) el.classList.add('active');
-  if (name === 'dashboard') loadDashboard();
+  if (name === 'dashboard') {
+    loadDashboard();
+    // 탭을 항상 메인(대시보드)으로 리셋
+    setTimeout(() => showDashTab('main'), 0);
+  }
   if (name === 'report') initReport();
 }
 
