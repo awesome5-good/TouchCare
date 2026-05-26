@@ -1793,6 +1793,13 @@ function renderCustomerDetailUI(customer, visits) {
   window._detailCustomer = customer;
   window._detailVisits = visits;
 
+  // 오늘 소견 입력 버튼 조건부 표시
+  const todayScheduleIds = ['demo-1','demo-2','demo-3','demo-8','demo-11','demo-15'];
+  const isToday = todayScheduleIds.includes(customer.id) ||
+    (allTodayVisits||[]).some(v => v.customer_id === customer.id);
+  const ctaBtn = document.querySelector('.cd-nav-btn.cta');
+  if (ctaBtn) ctaBtn.style.display = isToday ? 'flex' : 'none';
+
   // ── 사이드바 프로필 ──
   const av = customer.name ? customer.name.substring(0, 1) : '?';
   const ACOLORS = ['#e8a020','#1a6b8a','#2ba0a0','#2d8a4e','#9b59b6','#c0392b'];
@@ -1875,6 +1882,10 @@ function renderCustomerDetailUI(customer, visits) {
             ${v.pain_area ? `<span class="condition-chip chip-pain" style="font-size:12px">${v.pain_area}</span>` : ''}
             ${v.pain_level ? `<span class="condition-chip chip-level" style="font-size:12px">${v.pain_level}/10</span>` : ''}
           </div>
+          <button onclick="event.stopPropagation();viewReport('${customer.id}','${rn}')"
+            style="padding:4px 12px;background:var(--primary-light);color:var(--primary);border:1.5px solid var(--primary);border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;margin-right:8px">📋 리포트 보기</button>
+          <button onclick="event.stopPropagation();sendVisitReportLink('${customer.id}','${customer.phone||''}','${rn}')"
+            style="padding:4px 12px;background:var(--teal-light);color:var(--teal);border:1.5px solid var(--teal);border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;margin-right:8px">📤 링크 발송</button>
           <span class="hc-toggle" id="hc-arrow-${i}">▼</span>
         </div>
         <div class="hc-body" id="hc-body-${i}">
@@ -1980,6 +1991,22 @@ function renderCustomerDetailUI(customer, visits) {
 
   // 기본 탭으로 리셋
   switchDetailTab('history');
+}
+
+function viewReport(customerId, visitNum) {
+  const customer = (allCustomers||[]).find(c => c.id === customerId);
+  if (customer) { currentCustomer = customer; }
+  showScreen('report');
+}
+
+function sendVisitReportLink(customerId, phone, visitNum) {
+  const customer = (allCustomers||[]).find(c => c.id === customerId);
+  if (!customer) return;
+  const baseUrl = 'https://touch-care.vercel.app';
+  const link = baseUrl + '?report=' + customerId;
+  const msg = '[천지안마원] ' + customer.name + '님 ' + visitNum + '회차 케어 리포트가 준비됐어요\n\n' + link;
+  navigator.clipboard.writeText(msg).catch(()=>{});
+  showToast('리포트 링크가 복사됐어요! 📱', 'success');
 }
 
 function toggleHC(i) {
