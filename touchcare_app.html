@@ -1140,7 +1140,9 @@ async function generateAISummary(customer, visit, visits) {
 }
 
 function renderChart(visits) {
-  const ctx = document.getElementById('tension-chart').getContext('2d');
+  const canvas = document.getElementById('tension-chart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
   if (chartInstance) chartInstance.destroy();
 
   const tensionToNum = t => t === '높음' ? 3 : t === '보통' ? 2 : t === '낮음' ? 1 : null;
