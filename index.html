@@ -1716,10 +1716,6 @@ async function openCustomerDetail(customerId) {
     showToast('고객 정보를 찾을 수 없습니다', 'error');
     return;
   }
-  if (customerId.startsWith('demo-')) {
-    showToast('데모 고객은 상세 조회가 불가합니다', 'error');
-    return;
-  }
   window._detailCustomerId = customerId;
 
   let customer = null;
