@@ -1600,7 +1600,7 @@ function renderCustomerList(customers) {
     const apptCell = (appt && appt !== '미예약')
       ? `<span class="appt-badge ${isToday?'appt-today':'appt-normal'}">● ${appt}</span>`
       : `<div><div class="appt-none">미예약</div></div>`;
-    return `<div class="table-row" onclick="openCustomerDetail('${c.id}')">
+    return `<div class="table-row" onclick="(function(e){e.stopPropagation();openCustomerDetail('${c.id}');})(event)">
       <div class="customer-info">
         <div class="customer-avatar" style="background:${avColor};font-size:12px">${av}</div>
         <div>
@@ -1683,6 +1683,10 @@ const sampleVisits = {
 };
 
 async function openCustomerDetail(customerId) {
+  if (!customerId || customerId === 'undefined' || customerId === 'null') {
+    showToast('고객 정보를 찾을 수 없습니다', 'error');
+    return;
+  }
   window._detailCustomerId = customerId;
 
   if (String(customerId).startsWith('demo-')) {
@@ -2004,8 +2008,19 @@ function formatPhoneNumber(input) {
 
 // 이름으로 고객 ID 찾기
 function findCustomerIdByName(name) {
-  const found = allCustomers.find(c => c.name === name);
+  if (!name) return null;
+  const allList = [...(allCustomers || [])];
+  const found = allList.find(c => c.name && c.name.trim() === name.trim());
   return found ? found.id : null;
+}
+
+function openCustomerByName(name) {
+  const id = findCustomerIdByName(name);
+  if (!id) {
+    showToast((name || '해당') + ' 고객 정보를 찾을 수 없습니다', 'error');
+    return;
+  }
+  openCustomerDetail(id);
 }
 
 function renderSchedule() {
@@ -2025,7 +2040,7 @@ function renderSchedule() {
       <div class="schedule-time">${s.time}<div class="schedule-ampm">${s.ampm}</div></div>
       <div class="schedule-bar" style="background:${s.color}"></div>
       <div class="schedule-info">
-        <div class="schedule-name" style="cursor:pointer;color:var(--primary)" onclick="if('${cid}')openCustomerDetail('${cid}')">${s.name}</div>
+        <div class="schedule-name" style="cursor:pointer;color:var(--primary)" onclick="openCustomerByName('${s.name}')">${s.name}</div>
         <div class="schedule-desc">${s.desc}</div>
       </div>
       <div class="schedule-status ${classMap[s.status]}">${statusMap[s.status]}</div>
@@ -2353,7 +2368,7 @@ function renderScheduleFull() {
         </div>
         <div class="schedule-full-bar" style="background:${s.color};align-self:stretch"></div>
         <div style="flex:1">
-          <div class="schedule-full-name" style="cursor:pointer;color:var(--primary)" onclick="if('${cid}')openCustomerDetail('${cid}')">${s.name}</div>
+          <div class="schedule-full-name" style="cursor:pointer;color:var(--primary)" onclick="openCustomerByName('${s.name}')">${s.name}</div>
           <div class="schedule-full-desc">${s.desc}</div>
         </div>
         <div class="schedule-full-status ${classMap[s.status]}">${statusMap[s.status]}</div>
@@ -2382,7 +2397,7 @@ function renderCustomerListFull(customers) {
     const dates = ['2026.04.18','2026.04.15','2026.04.21','2026.04.10','2026.04.19','2026.04.17'];
     const appts = ['오늘 14:30','4월 26일 (일)','4월 28일 (화)','5월 2일 (토)','4월 25일 (토)','미예약'];
     const apptClass = i===0?'appt-today':i<3?'appt-soon':i<5?'appt-normal':'appt-none';
-    return `<div class="table-row" onclick="openCustomerDetail('${c.id}')">
+    return `<div class="table-row" onclick="(function(e){e.stopPropagation();openCustomerDetail('${c.id}');})(event)">
       <div class="customer-info">
         <div class="customer-avatar" style="background:${color}">${c.name.substring(0,1)}</div>
         <div>
