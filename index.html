@@ -2418,9 +2418,9 @@ function renderScheduleFull() {
   const classMap = { done:'status-done', active:'status-active', wait:'status-wait', new:'status-new' };
 
   const COLS = '70px 4px 150px 80px 70px 60px 1fr 90px';
-  const hs = 'display:flex;align-items:center';
+  const hs = 'display:flex;align-items:center;justify-content:center;text-align:center';
   const header = `<div style="display:grid;grid-template-columns:${COLS};gap:0 16px;padding:10px 24px;background:var(--gray-light);font-size:12px;font-weight:600;color:var(--text-muted);border-bottom:1px solid var(--border);align-items:center;min-height:40px">
-    <span style="${hs}">시간</span><span></span><span style="${hs}">고객</span><span style="${hs}">문진</span><span style="${hs}">부위</span><span style="${hs}">강도</span><span style="${hs}">소견 요약</span><span style="${hs}">상태</span>
+    <span style="${hs}">시간</span><span></span><span style="${hs}">고객</span><span style="${hs}">문진</span><span style="${hs}">부위</span><span style="${hs}">강도</span><span style="display:flex;align-items:center">소견 요약</span><span style="${hs}">상태</span>
   </div>`;
 
   const rows = schedules.map(s => {
@@ -2429,15 +2429,17 @@ function renderScheduleFull() {
     const v = s.visitData;
     const hasIntake = v && v.pain_area;
 
-    const intakeLabel  = hasIntake ? `<span style="font-size:11px;font-weight:700;color:var(--success)">✓ 완료</span>` : `<span style="font-size:11px;color:var(--text-muted)">미입력</span>`;
+    const intakeLabel  = hasIntake
+      ? `<span style="font-size:11px;font-weight:700;color:var(--success)">✓ 완료</span>`
+      : `<div style="display:flex;align-items:center;gap:6px"><span style="font-size:11px;color:var(--text-muted)">미입력</span><button onclick="event.stopPropagation();sendIntakeLink({name:'${s.name}',phone:'${customer.phone}'})" style="padding:3px 10px;background:var(--teal);color:white;border:none;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer">링크 발송</button></div>`;
     const areaCell     = hasIntake ? `<span class="condition-chip chip-pain" style="font-size:11px;display:inline-flex;align-items:center;justify-content:center;text-align:center">${v.pain_area}</span>` : '';
     const levelCell    = hasIntake ? `<div style="display:flex;align-items:center;gap:6px;white-space:nowrap">
         <span class="condition-chip chip-level" style="font-size:11px">${v.pain_level||'-'}/10</span>
         <span style="font-size:11px;color:var(--text-muted)">${painLabels[v.pain_level]||''}</span>
       </div>` : '';
     const noteCell     = hasIntake
-      ? (v.therapist_notes ? `<span style="font-size:12px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">${v.therapist_notes.substring(0,80)}${v.therapist_notes.length>80?'…':''}</span>` : '')
-      : `<button onclick="event.stopPropagation();sendIntakeLink({name:'${s.name}',phone:'${customer.phone}'})" style="padding:3px 10px;background:var(--teal);color:white;border:none;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer">링크 발송</button>`;
+      ? (v.therapist_notes ? `<span style="font-size:12px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">${(v.therapist_notes||'').replace(/[<>&'"\.]/g,'').substring(0,60)}</span>` : '')
+      : '';
 
     return `<div style="display:grid;grid-template-columns:${COLS};gap:0 16px;padding:14px 24px;border-bottom:1px solid var(--border);align-items:center;cursor:pointer;transition:background 0.15s"
       onmouseover="this.style.background='var(--primary-light)'" onmouseout="this.style.background=''"
@@ -2452,11 +2454,11 @@ function renderScheduleFull() {
           data-schedule-name="${s.name}" data-demo-id="${s.demoId||''}">${s.name}</div>
         <div style="font-size:12px;color:var(--text-muted)">${s.desc}</div>
       </div>
-      <div>${intakeLabel}</div>
-      <div>${areaCell}</div>
+      <div style="display:flex;align-items:center">${intakeLabel}</div>
+      <div style="display:flex;align-items:center;justify-content:center">${areaCell}</div>
       <div>${levelCell}</div>
       <div style="overflow:hidden">${noteCell}</div>
-      <div><span class="schedule-full-status ${classMap[s.status]}">${statusMap[s.status]}</span></div>
+      <div style="display:flex;align-items:center;justify-content:center"><span class="schedule-full-status ${classMap[s.status]}">${statusMap[s.status]}</span></div>
     </div>`;
   }).join('');
 
