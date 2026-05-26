@@ -2422,41 +2422,38 @@ function renderScheduleFull() {
     const customer = allCustomers.find(c => c.id === cid) || { name: s.name, phone: '-' };
     const v = s.visitData;
 
-    // 문진 박스
-    let intakeBox = '';
+    // 문진 요약 (가로 중간 영역)
+    let intakeSummary = '';
     if (v && v.pain_area) {
-      intakeBox = `<div style="margin-top:8px;padding:8px 16px;background:var(--primary-light);border-radius:6px;font-size:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <span style="font-weight:700;color:var(--primary);flex-shrink:0">📋 문진 완료</span>
+      intakeSummary = `
+        <span style="font-size:11px;font-weight:700;color:var(--primary);flex-shrink:0">📋 문진완료</span>
         <span class="condition-chip chip-pain" style="font-size:11px">${v.pain_area}</span>
         <span class="condition-chip chip-level" style="font-size:11px">${v.pain_level||'-'}/10</span>
-        ${v.hospital_record ? `<span style="color:var(--text-muted);font-size:11px">🏥 ${v.hospital_record}</span>` : ''}
-        ${v.therapist_notes ? `<span style="color:var(--text-muted);font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📝 ${v.therapist_notes.substring(0,40)}…</span>` : ''}
-        ${v.next_care_recommendation ? `<span style="color:var(--primary);font-size:11px;flex-shrink:0">🎯 ${v.next_care_recommendation.substring(0,20)}…</span>` : ''}
-      </div>`;
+        ${v.therapist_notes ? `<span style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:300px">📝 ${v.therapist_notes.substring(0,40)}…</span>` : ''}
+        ${v.next_care_recommendation ? `<span style="font-size:11px;color:var(--primary);flex-shrink:0">🎯 ${v.next_care_recommendation.substring(0,20)}…</span>` : ''}`;
     } else {
-      intakeBox = `<div style="margin-top:8px;padding:8px 12px;background:var(--gray-light);border-radius:6px;font-size:12px;color:var(--text-muted);display:flex;align-items:center;justify-content:space-between">
-        <span>📋 문진 미입력</span>
+      intakeSummary = `
+        <span style="font-size:11px;color:var(--text-muted)">📋 문진 미입력</span>
         <button onclick="event.stopPropagation();sendIntakeLink({name:'${s.name}',phone:'${customer.phone}'})"
-          style="padding:3px 10px;background:var(--teal);color:white;border:none;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer">링크 발송</button>
-      </div>`;
+          style="padding:3px 10px;background:var(--teal);color:white;border:none;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer">링크 발송</button>`;
     }
 
-    return `<div class="schedule-full-item" style="flex-direction:column;align-items:stretch;cursor:default">
-      <div style="display:flex;align-items:center;gap:16px">
-        <div style="flex-shrink:0;text-align:center;width:52px">
-          <div style="font-size:15px;font-weight:700;color:var(--text)">${s.time}</div>
-          <div style="font-size:10px;color:var(--text-muted)">${s.ampm}</div>
-        </div>
-        <div class="schedule-full-bar" style="background:${s.color};align-self:stretch"></div>
-        <div style="flex:1">
-          <div class="schedule-full-name" style="cursor:pointer;color:var(--primary)"
-            data-schedule-name="${s.name}" data-demo-id="${s.demoId||''}"
-            onclick="onScheduleNameClick(this)">${s.name}</div>
-          <div class="schedule-full-desc">${s.desc}</div>
-        </div>
-        <div class="schedule-full-status ${classMap[s.status]}">${statusMap[s.status]}</div>
+    return `<div class="schedule-full-item" style="display:flex;align-items:center;gap:16px;padding:16px 24px;border-bottom:1px solid var(--border)">
+      <div style="width:52px;flex-shrink:0;text-align:center">
+        <div style="font-size:15px;font-weight:700;color:var(--text)">${s.time}</div>
+        <div style="font-size:10px;color:var(--text-muted)">${s.ampm}</div>
       </div>
-      ${intakeBox}
+      <div style="width:4px;border-radius:2px;align-self:stretch;background:${s.color};flex-shrink:0"></div>
+      <div style="width:160px;flex-shrink:0">
+        <div style="font-size:15px;font-weight:700;cursor:pointer;color:var(--primary)"
+          data-schedule-name="${s.name}" data-demo-id="${s.demoId||''}"
+          onclick="onScheduleNameClick(this)">${s.name}</div>
+        <div style="font-size:13px;color:var(--text-muted)">${s.desc}</div>
+      </div>
+      <div style="flex:1;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        ${intakeSummary}
+      </div>
+      <div class="schedule-full-status ${classMap[s.status]}">${statusMap[s.status]}</div>
     </div>`;
   }).join('');
 }
