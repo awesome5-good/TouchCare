@@ -45,7 +45,7 @@
 
   /* ── 공통 헤더 ── */
   .header { background: var(--white); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 64px; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow); }
-  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo { display: flex; align-items: center; gap: 10px; cursor: pointer; }
   .logo-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
   .logo-icon img { width: 36px; height: 36px; object-fit: contain; }
   .logo-text h1 { font-size: 18px; font-weight: 700; color: var(--primary); letter-spacing: -0.3px; }
@@ -813,7 +813,7 @@
 ═══════════════════════════════════════════ -->
 <div id="screen-intake" class="screen">
   <div class="header">
-    <div class="logo">
+    <div class="logo" style="cursor:pointer" onclick="showScreen('dashboard')">
       <div class="logo-icon"><img src="logo.png" style="width:36px;height:36px;object-fit:contain;border-radius:8px"></div>
       <div class="logo-text"><h1>TouchCare</h1><p>천지안마원 · 방문 전 문진</p></div>
     </div>
@@ -1018,7 +1018,7 @@
 ═══════════════════════════════════════════ -->
 <div id="screen-therapist" class="screen">
   <div class="header">
-    <div class="logo">
+    <div class="logo" style="cursor:pointer" onclick="showScreen('dashboard')">
       <div class="logo-icon"><img src="logo.png" style="width:36px;height:36px;object-fit:contain;border-radius:8px"></div>
       <div class="logo-text"><h1>TouchCare</h1><p>안마사 소견 입력</p></div>
     </div>
@@ -1191,7 +1191,7 @@
 ═══════════════════════════════════════════ -->
 <div id="screen-report" class="screen">
   <div class="header">
-    <div class="logo">
+    <div class="logo" style="cursor:pointer" onclick="showScreen('dashboard')">
       <div class="logo-icon"><img src="logo.png" style="width:36px;height:36px;object-fit:contain;border-radius:8px"></div>
       <div class="logo-text"><h1>TouchCare</h1><p>천지안마원 · AI 케어 리포트</p></div>
     </div>
@@ -1605,7 +1605,7 @@ function renderCustomerList(customers) {
         </div>
       </div>
       <div class="visit-count">${c.visit_count||1}회</div>
-      <div style="font-size:13px;color:var(--text-muted)">${c.last_visit||'-'}</div>
+      <div style="font-size:13px;color:var(--text-muted)">${c.last_visit||'-'}<br><span style="font-size:11px">${getDaysAgo(c.last_visit)}</span></div>
       <div><span class="symptom-tag" style="background:${symBg};color:${symFg}">${sym}</span></div>
       <div>${apptCell}</div>
       <div onclick="event.stopPropagation()">
@@ -1613,6 +1613,16 @@ function renderCustomerList(customers) {
       </div>
     </div>`;
   }).join('');
+}
+
+function getDaysAgo(dateStr) {
+  if (!dateStr || dateStr === '-' || dateStr === 'undefined' || dateStr === undefined || dateStr === null) return '-';
+  const cleaned = String(dateStr).replace(/\./g, '-');
+  const date = new Date(cleaned);
+  if (isNaN(date.getTime())) return '-';
+  const diff = Math.floor((Date.now() - date) / (1000 * 60 * 60 * 24));
+  if (diff <= 0) return '오늘';
+  return diff + '일 전';
 }
 
 function getSymptomStyle(sym) {
@@ -2331,7 +2341,7 @@ function renderCustomerListFull(customers) {
     const dates = ['2026.04.18','2026.04.15','2026.04.21','2026.04.10','2026.04.19','2026.04.17'];
     const appts = ['오늘 14:30','4월 26일 (일)','4월 28일 (화)','5월 2일 (토)','4월 25일 (토)','미예약'];
     const apptClass = i===0?'appt-today':i<3?'appt-soon':i<5?'appt-normal':'appt-none';
-    return `<div class="table-row" onclick="openTherapistNote('${c.id}')">
+    return `<div class="table-row" onclick="openCustomerDetail('${c.id}')">
       <div class="customer-info">
         <div class="customer-avatar" style="background:${color}">${c.name.substring(0,1)}</div>
         <div>
