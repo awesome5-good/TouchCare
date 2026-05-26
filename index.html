@@ -1590,6 +1590,7 @@ function renderCustomerList(customers) {
     const globalIdx = startIdx + i;
     const avColor = AVG_COLORS[globalIdx % AVG_COLORS.length];
     const av = c.name ? c.name.substring(0, 2) : '??';
+    const rowId = c.id || c.phone || ('r-' + i);
     const hasIntake = String(c.id).startsWith('demo-')
       ? false
       : allTodayVisits.some(v => v.customer_id === c.id && v.pain_area);
@@ -1600,7 +1601,10 @@ function renderCustomerList(customers) {
     const apptCell = (appt && appt !== '미예약')
       ? `<span class="appt-badge ${isToday?'appt-today':'appt-normal'}">● ${appt}</span>`
       : `<div><div class="appt-none">미예약</div></div>`;
-    return `<div class="table-row" onclick="(function(e){e.stopPropagation();openCustomerDetail('${c.id}');})(event)">
+    // 이름/전화번호 이스케이프(따옴표 문제 방지)
+    const safeName = (c.name||'').replace(/'/g, '&#39;');
+    const safePhone = (c.phone||'').replace(/'/g, '&#39;');
+    return `<div class="table-row" data-customer-id="${rowId}" style="cursor:pointer">
       <div class="customer-info">
         <div class="customer-avatar" style="background:${avColor};font-size:12px">${av}</div>
         <div>
@@ -1612,11 +1616,20 @@ function renderCustomerList(customers) {
       <div style="font-size:13px;color:var(--text-muted)">${c.last_visit||'-'}<br><span style="font-size:11px">${getDaysAgo(c.last_visit)}</span></div>
       <div><span class="symptom-tag" style="background:${symBg};color:${symFg}">${sym}</span></div>
       <div>${apptCell}</div>
-      <div onclick="event.stopPropagation()">
-        <button class="intake-link-btn" onclick="sendIntakeLink({name:'${c.name}',phone:'${c.phone}'})">📋 문진 링크</button>
+      <div class="no-row-click">
+        <button class="intake-link-btn" onclick="sendIntakeLink({name:'${safeName}',phone:'${safePhone}'})"  >📋 문진 링크</button>
       </div>
     </div>`;
   }).join('');
+
+  // 이벤트 위임 (클릭마다 새로 등록해도 이전 리스너는 innerHTML 교체로 사라짐)
+  list.onclick = function(e) {
+    if (e.target.closest('.no-row-click')) return; // 문진 링크 버튼은 제외
+    const row = e.target.closest('.table-row');
+    if (!row) return;
+    const id = row.getAttribute('data-customer-id');
+    if (id) openCustomerDetail(id);
+  };
 }
 
 function getDaysAgo(dateStr) {
@@ -1689,21 +1702,51 @@ async function openCustomerDetail(customerId) {
   }
   window._detailCustomerId = customerId;
 
-  if (String(customerId).startsWith('demo-')) {
-    const customer = allCustomers.find(c => c.id === customerId) || {};
+  let customer = null;
+  let visits = [];
+
+  // 1) allCustomers(샘플 포함)에서 id 또는 phone으로 찾기 (동기, 빠름)
+  customer = (allCustomers || []).find(c =>
+    c.id === customerId || c.phone === customerId
+  ) || null;
+
+  if (customer) {
+    // 샘플 고객이면 sampleVisits 사용
+    if (String(customer.id).startsWith('demo-')) {
+      visits = sampleVisits[customer.id] || [];
+      currentCustomer = customer;
+      renderCustomerDetailUI(customer, visits);
+      showScreen('customer-detail');
+      return;
+    }
+    // DB 고객: visits 비동기 조회
     currentCustomer = customer;
-    renderCustomerDetailUI(customer, sampleVisits[customerId] || []);
+    renderCustomerDetailUI(customer, []); // 먼저 화면 보여주고
     showScreen('customer-detail');
+    db.from('visits').select('*')
+      .eq('customer_id', customer.id)
+      .order('visit_date', { ascending: false })
+      .then(({ data }) => {
+        visits = data || [];
+        renderCustomerDetailUI(customer, visits); // 데이터 오면 업데이트
+      });
     return;
   }
 
-  const { data: customer } = await db.from('customers').select('*').eq('id', customerId).single();
-  if (!customer) { showToast('고객 정보를 불러올 수 없습니다.', 'error'); return; }
-  currentCustomer = customer;
+  // 2) DB에서 직접 조회 (id가 UUID인 경우)
+  try {
+    const { data: dbCustomer } = await db.from('customers').select('*').eq('id', customerId).single();
+    if (dbCustomer) {
+      currentCustomer = dbCustomer;
+      const { data: dbVisits } = await db.from('visits').select('*')
+        .eq('customer_id', customerId).order('visit_date', { ascending: false });
+      renderCustomerDetailUI(dbCustomer, dbVisits || []);
+      showScreen('customer-detail');
+      return;
+    }
+  } catch(e) {}
 
-  const { data: visits } = await db.from('visits').select('*').eq('customer_id', customerId).order('visit_date', { ascending: false });
-  renderCustomerDetailUI(customer, visits || []);
-  showScreen('customer-detail');
+  showToast('고객 정보를 찾을 수 없습니다', 'error');
 }
 
 // ── 샘플 고객 추가 정보 ──
