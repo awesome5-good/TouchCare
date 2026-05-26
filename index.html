@@ -1559,10 +1559,32 @@ async function loadDashboard() {
   renderCustomerList(filteredCustomers);
   renderPagination();
   renderSchedule();
+
+  // 이벤트 위임 — cloneNode로 중복 리스너 완전 제거 후 새로 등록
+  const oldList = document.getElementById('customer-list');
+  if (oldList) {
+    const newList = oldList.cloneNode(true);
+    oldList.parentNode.replaceChild(newList, oldList);
+    newList.addEventListener('click', function(e) {
+      if (e.target.closest('.no-row-click')) return;
+      const row = e.target.closest('[data-customer-id]');
+      if (!row) return;
+      const id = row.getAttribute('data-customer-id');
+      console.log('[고객 클릭] id:', id);
+      if (id) openCustomerDetail(id);
+    });
+    // cloneNode 후 innerHTML이 날아가므로 다시 렌더링
+    renderCustomerList(filteredCustomers);
+    renderPagination();
+  }
 }
 
 function renderCustomerList(customers) {
   filteredCustomers = customers;
+  console.log('[renderCustomerList] 고객 수:', customers.length);
+  customers.forEach((c, i) => {
+    console.log(i, '번째:', c.name, '/ id:', c.id, '/ 타입:', typeof c.id);
+  });
   const list = document.getElementById('customer-list');
 
   if (!customers.length) {
@@ -1590,7 +1612,9 @@ function renderCustomerList(customers) {
     const globalIdx = startIdx + i;
     const avColor = AVG_COLORS[globalIdx % AVG_COLORS.length];
     const av = c.name ? c.name.substring(0, 2) : '??';
-    const rowId = c.id || c.phone || ('r-' + i);
+    const safeId = (c.id && c.id !== 'undefined' && c.id !== 'null')
+      ? c.id
+      : (c.phone ? c.phone : 'unknown-' + i);
     const hasIntake = String(c.id).startsWith('demo-')
       ? false
       : allTodayVisits.some(v => v.customer_id === c.id && v.pain_area);
@@ -1604,7 +1628,7 @@ function renderCustomerList(customers) {
     // 이름/전화번호 이스케이프(따옴표 문제 방지)
     const safeName = (c.name||'').replace(/'/g, '&#39;');
     const safePhone = (c.phone||'').replace(/'/g, '&#39;');
-    return `<div class="table-row" data-customer-id="${rowId}" style="cursor:pointer">
+    return `<div class="table-row" data-customer-id="${safeId}" style="cursor:pointer">
       <div class="customer-info">
         <div class="customer-avatar" style="background:${avColor};font-size:12px">${av}</div>
         <div>
@@ -1617,19 +1641,11 @@ function renderCustomerList(customers) {
       <div><span class="symptom-tag" style="background:${symBg};color:${symFg}">${sym}</span></div>
       <div>${apptCell}</div>
       <div class="no-row-click">
-        <button class="intake-link-btn" onclick="sendIntakeLink({name:'${safeName}',phone:'${safePhone}'})"  >📋 문진 링크</button>
+        <button class="intake-link-btn" onclick="event.stopPropagation();sendIntakeLink({name:'${safeName}',phone:'${safePhone}'})">📋 문진 링크</button>
       </div>
     </div>`;
   }).join('');
 
-  // 이벤트 위임 (클릭마다 새로 등록해도 이전 리스너는 innerHTML 교체로 사라짐)
-  list.onclick = function(e) {
-    if (e.target.closest('.no-row-click')) return; // 문진 링크 버튼은 제외
-    const row = e.target.closest('.table-row');
-    if (!row) return;
-    const id = row.getAttribute('data-customer-id');
-    if (id) openCustomerDetail(id);
-  };
 }
 
 function getDaysAgo(dateStr) {
