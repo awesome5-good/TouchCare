@@ -2307,6 +2307,20 @@ async function saveAndGenerateReport() {
 async function initReport() {
   const customer = currentCustomer;
   const visit = currentVisit;
+
+  // 고객용 뷰: 안마사 전용 버튼 숨김
+  if (window._isCustomerView) {
+    const sendBtn = document.querySelector('#screen-report .header-right button');
+    if (sendBtn) sendBtn.style.display = 'none';
+    const saveBtn = document.querySelector('.btn-outline');
+    if (saveBtn) saveBtn.style.display = 'none';
+    const bookBtn = document.querySelector('.btn-book');
+    if (bookBtn) {
+      bookBtn.textContent = '천지안마원 예약하기 →';
+      bookBtn.onclick = () => alert('네이버 예약: https://naver.me/천지안마원');
+    }
+  }
+
   if (!customer) {
     // 데모 데이터로 진행
     renderDemoReport();
@@ -2738,6 +2752,7 @@ if (sessionStorage.getItem('tc_role') === 'therapist') {
 
   // ── 리포트 직접 열기
   if (reportCustomerId) {
+    window._isCustomerView = true; // 고객용 뷰 처리
     if (reportCustomerId.startsWith('demo-')) {
       // 데모 고객은 Supabase 조회 없이 처리
       const demoMap = {
