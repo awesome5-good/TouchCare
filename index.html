@@ -548,7 +548,7 @@
           cursor:pointer;font-size:20px;position:relative;line-height:1">
           🔔
           <span id="bell-badge" style="display:none;position:absolute;top:2px;right:2px;
-            width:16px;height:16px;background:var(--danger);border-radius:50%;
+            min-width:16px;height:16px;padding:0 4px;background:var(--danger);border-radius:50%;
             font-size:10px;font-weight:700;color:white;line-height:16px;
             text-align:center;pointer-events:none">
             <span id="bell-count">0</span>
@@ -1562,32 +1562,45 @@ function loginCustomer() { loginExistingCustomer(); }
 
 async function submitDirectCustomer() {
   const name = document.getElementById('direct-name').value.trim();
-  const phone = document.getElementById('direct-phone').value.trim();
+  const phoneRaw = document.getElementById('direct-phone').value.trim();
   if (!name) { showToast('이름을 입력해주세요', 'error'); return; }
-  if (!phone || phone.length < 10) { showToast('전화번호를 입력해주세요', 'error'); return; }
+  if (!phoneRaw || phoneRaw.length < 10) { showToast('전화번호를 입력해주세요', 'error'); return; }
 
-  // 샘플 고객 먼저 확인
+  // 샘플 고객 먼저 확인 (hyphens 무시)
+  const phoneDigits = phoneRaw.replace(/\D/g,'');
   const sampleMatch = (allCustomers||[]).find(c =>
-    c.phone && c.phone.replace(/-/g,'') === phone.replace(/-/g,'')
+    c.phone && c.phone.replace(/\D/g,'') === phoneDigits
   );
   if (sampleMatch) {
     currentCustomer = sampleMatch;
-    window._existingBirth = '';
+    window._existingBirth = sampleMatch.birth_date || '';
     showToast(sampleMatch.name + '님, 다시 오셨군요! 반갑습니다 😊', 'success');
     setTimeout(() => showScreen('intake'), 1200);
     return;
   }
 
-  // DB 조회 (전화번호만으로 판별, 이름 비교 없음)
-  const { data: existing } = await db.from('customers').select('*').eq('phone', phone).single();
+  // DB 조회 - 하이픈 있는 형식과 없는 형식 둘 다 시도
+  const phoneFormatted = phoneRaw.replace(/\D/g,'').replace(/(\d{3})(\d{4})(\d{4})/,'$1-$2-$3');
+  let existing = null;
+  const { data: d1 } = await db.from('customers').select('*').eq('phone', phoneFormatted).single();
+  if (d1) { existing = d1; }
+  if (!existing) {
+    const { data: d2 } = await db.from('customers').select('*').eq('phone', phoneRaw).single();
+    if (d2) { existing = d2; }
+  }
+  if (!existing) {
+    const { data: d3 } = await db.from('customers').select('*').eq('phone', phoneDigits).single();
+    if (d3) { existing = d3; }
+  }
+
   if (existing) {
     currentCustomer = existing;
     window._existingBirth = existing.birth_date || '';
     showToast(existing.name + '님, 다시 오셨군요! 반갑습니다 😊', 'success');
     setTimeout(() => showScreen('intake'), 1200);
   } else {
-    const { data: created, error } = await db.from('customers')
-      .insert([{ name, phone, created_at: new Date().toISOString() }])
+    const { data: created } = await db.from('customers')
+      .insert([{ name, phone: phoneFormatted, created_at: new Date().toISOString() }])
       .select().single();
     if (created) {
       currentCustomer = created;
@@ -1674,6 +1687,17 @@ async function loadDashboard() {
   const dbPhones = new Set(dbCustomers.map(c => c.phone).filter(Boolean));
   const filteredSamples = sampleCustomers.filter(s => !dbPhones.has(s.phone));
   allCustomers = [...dbCustomers, ...filteredSamples];
+  allCustomers = allCustomers.map(c => {
+    if (c.birth_date && !c.age) {
+      const birth = new Date(c.birth_date);
+      const today = new Date();
+      let age = today.getFullYear() - birth.getFullYear();
+      const m = today.getMonth() - birth.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+      c.age = age;
+    }
+    return c;
+  });
 
   const todayVisits = allTodayVisits;
   const isDemoMode = dbCustomers.length === 0;
@@ -1926,6 +1950,14 @@ function switchDetailTab(tab) {
 }
 
 function renderCustomerDetailUI(customer, visits) {
+  if (customer.birth_date && !customer.age) {
+    const birth = new Date(customer.birth_date);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+    customer.age = age;
+  }
   window._detailCustomer = customer;
   window._detailVisits = visits;
 
@@ -1945,10 +1977,6 @@ function renderCustomerDetailUI(customer, visits) {
   avEl.style.background = ACOLORS[ci];
 
   document.getElementById('cd-name').textContent = (customer.name || '-') + ' 님';
-  if (customer.birth_date && !customer.age) {
-    const birth = new Date(customer.birth_date);
-    customer.age = new Date().getFullYear() - birth.getFullYear();
-  }
   document.getElementById('cd-sub').textContent = `${customer.age||'-'}세 · ${customer.phone||'-'}`;
 
   // 방문 통계
@@ -2406,6 +2434,9 @@ async function submitIntake() {
   if (footer) footer.style.display = 'none';
   const complete = document.getElementById('intake-complete');
   if (complete) complete.style.display = 'flex';
+  if (currentCustomer) {
+    addNotification('📋 ' + currentCustomer.name + '님이 문진을 완료했습니다');
+  }
 }
 
 function skipIntake() {
@@ -2421,6 +2452,10 @@ function skipIntake() {
     if (h2) h2.textContent = '확인했습니다!';
     if (ps[0]) ps[0].textContent = '원장님이 방문 시 직접 상담해드릴게요';
     if (ps[1]) ps[1].textContent = '예약 시간에 편안하게 오세요 😊';
+  }
+  // 알림 추가
+  if (currentCustomer) {
+    addNotification('📋 ' + currentCustomer.name + '님이 접수를 완료했습니다 (문진 건너뜀)');
   }
 }
 
@@ -2479,6 +2514,14 @@ async function initReport() {
     if (bookBtn) {
       bookBtn.textContent = '천지안마원 예약하기 →';
       bookBtn.onclick = () => alert('네이버 예약: https://naver.me/천지안마원');
+    }
+  }
+
+  if (!window._isCustomerView) {
+    const reportLogo = document.querySelector('#screen-report .logo');
+    if (reportLogo) {
+      reportLogo.style.cursor = 'pointer';
+      reportLogo.onclick = function() { showScreen('dashboard'); };
     }
   }
 
@@ -2791,8 +2834,10 @@ function addNotification(msg) {
       '</div></div>'
     ).join('');
   }
-  if (badge) badge.style.display = 'inline-block';
-  if (count) count.textContent = _notifications.length;
+  if (badge) {
+    badge.style.display = 'inline-block';
+    if (count) count.textContent = _notifications.length;
+  }
   // 브라우저 알림 (권한 있으면)
   if (Notification && Notification.permission === 'granted') {
     new Notification('TouchCare', { body: msg, icon: '/logo.png' });
