@@ -1556,14 +1556,12 @@ async function loadDashboard() {
   document.getElementById('dash-subtitle').innerHTML = document.getElementById('today-date').textContent + ` · 오늘 예약 <strong>${todayVisits.length || 12}건</strong>`;
 
   filteredCustomers = [...allCustomers];
-  renderCustomerList(filteredCustomers);
-  renderPagination();
   renderSchedule();
 
-  // 이벤트 위임 — cloneNode로 중복 리스너 완전 제거 후 새로 등록
+  // customer-list 이벤트 위임 — cloneNode로 기존 리스너 제거 후 최초 1회 등록
   const oldList = document.getElementById('customer-list');
   if (oldList) {
-    const newList = oldList.cloneNode(true);
+    const newList = oldList.cloneNode(false); // 내용 없이 컨테이너만 복제
     oldList.parentNode.replaceChild(newList, oldList);
     newList.addEventListener('click', function(e) {
       if (e.target.closest('.no-row-click')) return;
@@ -1573,10 +1571,11 @@ async function loadDashboard() {
       console.log('[고객 클릭] id:', id);
       if (id) openCustomerDetail(id);
     });
-    // cloneNode 후 innerHTML이 날아가므로 다시 렌더링
-    renderCustomerList(filteredCustomers);
-    renderPagination();
   }
+
+  // 리스너 등록 후 1회만 렌더링
+  renderCustomerList(filteredCustomers);
+  renderPagination();
 }
 
 function renderCustomerList(customers) {
