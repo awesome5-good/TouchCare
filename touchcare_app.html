@@ -900,28 +900,25 @@ function renderCustomerList(customers) {
     list.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted)">고객 데이터가 없습니다</div>';
     return;
   }
-  const symptoms = ['어깨 결림','허리 통증','두통·목 결림','무릎 근육통','손목·팔 피로','종아리 부종','오십견','골반 통증'];
-  const tagColors = ['#fde8e6:#c0392b','#e6f5ec:#2d8a4e','#e8f4f8:#1a6b8a','#fef3e0:#e8a020','#f3e8ff:#9b59b6'];
   list.innerHTML = customers.map((c, i) => {
     const color = COLORS[i % COLORS.length];
-    const symptom = c.main_symptom || symptoms[i % symptoms.length];
-    const tc = tagColors[i % tagColors.length].split(':');
-    const visits = [38,12,64,7,3,21][i] || 1;
-    const dates = ['2026.04.18','2026.04.15','2026.04.21','2026.04.10','2026.04.19','2026.04.17'];
-    const appts = ['오늘 14:30','4월 26일 (일)','4월 28일 (화)','5월 2일 (토)','4월 25일 (토)','미예약'];
-    const apptClass = i===0?'appt-today':i<3?'appt-soon':i<5?'appt-normal':'appt-none';
+    const symptom = c.main_symptom || '-';
+    const lastVisit = c.last_visit || '-';
+    const nextAppt = c.next_appointment || '미예약';
+    const isToday = nextAppt.startsWith('오늘');
+    const apptClass = isToday ? 'appt-today' : (nextAppt !== '미예약' ? 'appt-normal' : 'appt-none');
     return `<div class="table-row" onclick="openTherapistNote('${c.id}')">
       <div class="customer-info">
-        <div class="customer-avatar" style="background:${color}">${c.name.substring(0,1)}</div>
+        <div class="customer-avatar" style="background:${color}">${(c.name||'?').substring(0,1)}</div>
         <div>
-          <div class="customer-name">${c.name}${c.is_vip?'<span class="vip-badge">VIP</span>':''}</div>
-          <div class="customer-detail">${c.age || 40}세 · ${c.phone || '-'}</div>
+          <div class="customer-name">${c.name||'-'}${c.is_vip?'<span class="vip-badge">VIP</span>':''}</div>
+          <div class="customer-detail">${c.age||'-'}세 · ${c.phone||'-'}</div>
         </div>
       </div>
-      <div class="visit-count">${visits}회</div>
-      <div style="font-size:13px;color:var(--text-muted)">${dates[i]||'-'}<br><span style="font-size:11px">${[5,8,2,13,4,6][i]}일 전</span></div>
-      <div><span class="symptom-tag" style="background:${tc[0]};color:${tc[1]}">${symptom}</span></div>
-      <div><span class="appt-badge ${apptClass}">${appts[i]||'-'}</span></div>
+      <div class="visit-count">${c.visit_count||1}회</div>
+      <div style="font-size:13px;color:var(--text-muted)">${lastVisit}</div>
+      <div><span class="symptom-tag">${symptom}</span></div>
+      <div><span class="appt-badge ${apptClass}">${nextAppt}</span></div>
     </div>`;
   }).join('');
 }
@@ -958,6 +955,10 @@ function renderSchedule() {
 }
 
 async function openTherapistNote(customerId) {
+  if (!customerId || customerId.startsWith('demo-')) {
+    showToast('실제 고객 데이터가 아닙니다', 'error');
+    return;
+  }
   const { data: customer } = await db.from('customers').select('*').eq('id', customerId).single();
   if (!customer) return;
   currentCustomer = customer;
