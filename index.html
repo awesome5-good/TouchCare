@@ -634,40 +634,85 @@
      고객 상세 화면
 ═══════════════════════════════════════════ -->
 <div id="screen-customer-detail" class="screen">
+  <!-- 대시보드와 동일한 헤더 -->
   <div class="header">
     <div class="logo">
       <div class="logo-icon"><img src="logo.png" style="width:36px;height:36px;object-fit:contain;border-radius:8px"></div>
-      <div class="logo-text"><h1>TouchCare</h1><p>고객 상세</p></div>
+      <div class="logo-text"><h1>TouchCare</h1><p>천지안마원 · 고객 상세</p></div>
+    </div>
+    <div class="header-nav">
+      <button class="nav-btn" onclick="showScreen('dashboard')">대시보드</button>
+      <button class="nav-btn active">고객</button>
     </div>
     <div class="header-right">
-      <button onclick="showScreen('dashboard')" style="padding:8px 16px;border:1.5px solid var(--border);background:white;border-radius:8px;font-size:13px;cursor:pointer;font-weight:600">← 대시보드</button>
+      <button onclick="showScreen('dashboard')" style="padding:8px 16px;border:1.5px solid var(--border);background:white;border-radius:var(--radius-sm);font-size:13px;font-weight:600;color:var(--text-muted);cursor:pointer">← 목록</button>
+      <button onclick="logout()" style="padding:8px 16px;background:transparent;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;color:var(--text-muted);cursor:pointer">로그아웃</button>
     </div>
   </div>
-  <div class="content">
-    <div class="patient-banner" style="margin-bottom:20px">
-      <div class="patient-avatar-lg" id="detail-avatar">-</div>
-      <div class="patient-info-main">
-        <div style="font-size:11px;opacity:0.65;margin-bottom:3px">고객 정보</div>
-        <h2 id="detail-name">-</h2>
-        <p id="detail-sub" style="font-size:13px;opacity:0.7;margin-top:2px">-</p>
-        <p id="detail-memo" style="font-size:12px;opacity:0.8;margin-top:4px;display:none">-</p>
-      </div>
-      <div class="patient-stats">
-        <div class="patient-stat">
-          <div class="lbl">총 방문</div>
-          <div class="num" id="detail-visit-count">-</div>
+
+  <!-- 2컬럼 본문 -->
+  <div style="display:flex;gap:20px;padding:24px 32px;flex:1;background:var(--bg)">
+
+    <!-- ── 좌측: 고객 정보 카드 (35%) ── -->
+    <div style="width:35%;flex-shrink:0;display:flex;flex-direction:column;gap:16px">
+      <div class="card" style="padding:24px">
+        <!-- 아바타 + 이름 -->
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+          <div id="detail-avatar" style="width:56px;height:56px;border-radius:50%;background:var(--primary);color:white;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0">-</div>
+          <div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <h2 id="detail-name" style="font-size:20px;font-weight:800;color:var(--text)">-</h2>
+              <span id="detail-vip-badge"></span>
+            </div>
+            <p id="detail-sub" style="font-size:13px;color:var(--text-muted);margin-top:2px">-</p>
+          </div>
         </div>
-        <div class="patient-stat-divider"></div>
-        <div class="patient-stat">
-          <div class="lbl">첫 방문일</div>
-          <div class="num" id="detail-first-visit" style="font-size:14px">-</div>
+
+        <!-- 주요 증상 -->
+        <div style="margin-bottom:12px">
+          <div style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:6px">주요 증상</div>
+          <span id="detail-symptom-tag" style="display:inline-block;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:500;background:var(--primary-light);color:var(--primary)">-</span>
         </div>
+
+        <!-- 메모 -->
+        <div id="detail-memo-wrap" style="display:none;margin-bottom:14px;padding:10px 12px;background:var(--accent-light);border-radius:var(--radius-sm);font-size:12px;color:var(--text);line-height:1.55">
+          <span style="font-weight:600;color:var(--accent)">📌 메모</span>
+          <span id="detail-memo"></span>
+        </div>
+
+        <!-- 통계 -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+          <div style="background:var(--gray-light);border-radius:var(--radius-sm);padding:12px;text-align:center">
+            <div style="font-size:22px;font-weight:800;color:var(--primary)" id="detail-visit-count">-</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">총 방문</div>
+          </div>
+          <div style="background:var(--gray-light);border-radius:var(--radius-sm);padding:12px;text-align:center">
+            <div style="font-size:13px;font-weight:700;color:var(--text)" id="detail-last-visit">-</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">마지막 방문</div>
+          </div>
+          <div style="background:var(--gray-light);border-radius:var(--radius-sm);padding:12px;text-align:center;grid-column:span 2">
+            <div style="font-size:13px;font-weight:700;color:var(--text)" id="detail-first-visit">-</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">첫 방문일</div>
+          </div>
+        </div>
+
+        <!-- CTA 버튼 -->
+        <button class="detail-cta" style="margin-bottom:0" onclick="openTherapistNote(window._detailCustomerId)">+ 오늘 소견 입력하기</button>
       </div>
     </div>
-    <button class="detail-cta" onclick="openTherapistNote(window._detailCustomerId)">+ 오늘 소견 입력하기</button>
-    <div class="card">
-      <div class="card-header"><h3>케어 히스토리</h3><p id="detail-history-count"></p></div>
-      <div id="customer-visit-history"></div>
+
+    <!-- ── 우측: 케어 히스토리 (65%) ── -->
+    <div style="flex:1;min-width:0">
+      <div class="card" style="overflow:hidden">
+        <div class="card-header">
+          <div><h3>케어 히스토리</h3><p id="detail-history-count" style="color:var(--text-muted);font-size:12px;margin-top:2px"></p></div>
+        </div>
+        <!-- 히스토리 테이블 헤더 -->
+        <div style="display:grid;grid-template-columns:60px 90px 80px 60px 1fr 110px;padding:8px 20px;background:var(--gray-light);font-size:12px;color:var(--text-muted);font-weight:600;gap:8px">
+          <span>회차</span><span>날짜</span><span>불편 부위</span><span>통증</span><span>소견 요약</span><span></span>
+        </div>
+        <div id="customer-visit-history"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -1553,50 +1598,72 @@ async function openCustomerDetail(customerId) {
 }
 
 function renderCustomerDetailUI(customer, visits) {
-  document.getElementById('detail-avatar').textContent = customer.name ? customer.name.substring(0,2) : '?';
+  const av = customer.name ? customer.name.substring(0,2) : '?';
+  const avEl = document.getElementById('detail-avatar');
+  avEl.textContent = av;
+  // 아바타 색상
+  const COLORS = ['#e8a020','#1a6b8a','#2ba0a0','#2d8a4e','#9b59b6','#c0392b'];
+  const ci = (customer.name||'?').charCodeAt(0) % COLORS.length;
+  avEl.style.background = COLORS[ci];
+
   document.getElementById('detail-name').textContent = (customer.name || '-') + ' 님';
-  // 나이·전화번호 + 메모
-  const subParts = [`${customer.age||'-'}세`, customer.phone||'-'];
-  document.getElementById('detail-sub').textContent = subParts.join(' · ');
-  // 메모 표시
+  document.getElementById('detail-sub').textContent = `${customer.age||'-'}세 · ${customer.phone||'-'}`;
+
+  // VIP 뱃지
+  const vipEl = document.getElementById('detail-vip-badge');
+  if (vipEl) vipEl.innerHTML = customer.is_vip ? '<span class="vip-badge">VIP</span>' : '';
+
+  // 주요 증상 태그
+  const symEl = document.getElementById('detail-symptom-tag');
+  if (symEl) {
+    const sym = customer.main_symptom || '정보 없음';
+    const { bg, fg } = getSymptomStyle(sym);
+    symEl.textContent = sym;
+    symEl.style.background = bg;
+    symEl.style.color = fg;
+  }
+
+  // 메모
+  const memoWrap = document.getElementById('detail-memo-wrap');
   const memoEl = document.getElementById('detail-memo');
-  if (memoEl) {
+  if (memoWrap && memoEl) {
     if (customer.memo) {
-      memoEl.textContent = '📌 ' + customer.memo;
-      memoEl.style.display = 'block';
+      memoEl.textContent = ' ' + customer.memo;
+      memoWrap.style.display = 'block';
     } else {
-      memoEl.style.display = 'none';
+      memoWrap.style.display = 'none';
     }
   }
+
+  // 통계
   document.getElementById('detail-visit-count').textContent = (customer.visit_count || visits.length || 0) + '회';
+  const lastVisit = visits.length ? visits[0].visit_date : (customer.last_visit || '-');
   const firstVisit = visits.length ? visits[visits.length-1].visit_date : (customer.last_visit || '-');
+  const lvEl = document.getElementById('detail-last-visit');
+  if (lvEl) lvEl.textContent = lastVisit;
   document.getElementById('detail-first-visit').textContent = firstVisit;
   document.getElementById('detail-history-count').textContent = `총 ${visits.length}건`;
 
   const histEl = document.getElementById('customer-visit-history');
   if (!visits.length) {
-    histEl.innerHTML = '<div style="padding:36px;text-align:center;color:var(--text-muted)"><div style="font-size:28px;margin-bottom:8px">📋</div><div>아직 방문 기록이 없습니다</div></div>';
+    histEl.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted)"><div style="font-size:28px;margin-bottom:8px">📋</div><div>아직 방문 기록이 없습니다</div></div>';
     return;
   }
+
   histEl.innerHTML = visits.map((v, i) => {
     const roundNum = v.visit_number || (visits.length - i);
     const dateStr = (v.visit_date||'').replace(/-/g,'.');
-    const hasNote = v.therapist_notes || v.ai_summary;
-    return `<div class="visit-history-item">
-      <div class="visit-history-meta">
-        <div style="width:32px;height:32px;background:var(--primary);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin:0 auto 4px">${roundNum}</div>
-        <div class="visit-date-label">${dateStr}</div>
+    const noteText = v.therapist_notes || v.ai_summary || '-';
+    const noteShort = noteText.length > 50 ? noteText.substring(0,50) + '…' : noteText;
+    return `<div style="display:grid;grid-template-columns:60px 90px 80px 60px 1fr 110px;padding:13px 20px;border-bottom:1px solid var(--border);align-items:center;gap:8px;font-size:13px;transition:background 0.15s" onmouseover="this.style.background='var(--primary-light)'" onmouseout="this.style.background=''">
+      <div style="display:flex;align-items:center;justify-content:center">
+        <span style="width:28px;height:28px;background:var(--primary);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">${roundNum}</span>
       </div>
-      <div class="visit-history-body">
-        ${v.pain_area ? `<div class="visit-history-chips">
-          <span class="condition-chip chip-pain">${v.pain_area}</span>
-          ${v.pain_level ? `<span class="condition-chip chip-level">${v.pain_level}/10</span>` : ''}
-        </div>` : ''}
-        ${v.ai_summary ? `<div style="font-size:12px;background:var(--primary-light);color:var(--primary);padding:4px 8px;border-radius:4px;margin-bottom:4px">🤖 ${v.ai_summary.substring(0,60)}${v.ai_summary.length>60?'…':''}</div>` : ''}
-        ${v.therapist_notes ? `<div class="visit-history-note">${v.therapist_notes.substring(0,80)}${v.therapist_notes.length>80?'…':''}</div>` : ''}
-        ${!v.pain_area && !hasNote ? '<div style="font-size:12px;color:var(--text-muted)">기록 없음</div>' : ''}
-      </div>
-      <button class="btn-detail-action" onclick="openTherapistNote('${customer.id}')">소견 보기·수정</button>
+      <div style="color:var(--text-muted)">${dateStr}</div>
+      <div>${v.pain_area ? `<span class="condition-chip chip-pain" style="font-size:12px">${v.pain_area}</span>` : '<span style="color:var(--text-muted)">-</span>'}</div>
+      <div>${v.pain_level ? `<span class="condition-chip chip-level" style="font-size:12px">${v.pain_level}/10</span>` : '<span style="color:var(--text-muted)">-</span>'}</div>
+      <div style="color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${noteText !== '-' ? noteText : ''}">${noteShort}</div>
+      <div><button class="btn-detail-action" onclick="openTherapistNote('${customer.id}')">소견 보기·수정</button></div>
     </div>`;
   }).join('');
 }
@@ -2254,24 +2321,41 @@ if (sessionStorage.getItem('tc_role') === 'therapist') {
   // ── phone 파라미터: 고객 전용 화면
   if (phone) {
     urlPhone = phone;
-    // 안마사 섹션 숨기고 고객 전용 섹션 표시
     document.getElementById('therapist-login-section').style.display = 'none';
     document.getElementById('customer-only-section').style.display = 'block';
     document.getElementById('login-subtitle').textContent = '방문 전 컨디션 입력';
 
-    // DB 조회 (기존 고객 여부 판단)
-    const { data: existingCustomer } = await db.from('customers').select('*').eq('phone', phone).single();
+    // 1) DB 조회
+    const { data: dbCustomer } = await db.from('customers').select('*').eq('phone', phone).single();
     document.getElementById('customer-loading').style.display = 'none';
 
-    if (existingCustomer) {
-      // 기존 고객 → PIN 폼
+    if (dbCustomer) {
+      // DB에 있는 기존 고객 → PIN 폼
       document.getElementById('customer-existing-form').style.display = 'block';
       setTimeout(() => document.getElementById('customer-pin').focus(), 100);
     } else {
-      // 신규 고객 → 이름+전화번호 폼
-      document.getElementById('customer-new-form').style.display = 'block';
-      document.getElementById('customer-phone-new').value = phone;
-      setTimeout(() => document.getElementById('customer-name-new').focus(), 100);
+      // 2) sampleCustomers에서 phone 조회 (샘플 = 기존 고객 처리)
+      const samplePhones = [
+        '010-1234-5678','010-2345-6789','010-3456-7890','010-4567-8901','010-5678-9012',
+        '010-6789-0123','010-7890-1234','010-8901-2345','010-9012-3456','010-0123-4567',
+        '010-1234-5670','010-2345-6780','010-3456-7891','010-4567-8902','010-5678-9013',
+        '010-6789-0124','010-7890-1235','010-8901-2346','010-9012-3457','010-0123-4568',
+        '010-1111-2222','010-2222-3333','010-3333-4444','010-4444-5555','010-5555-6666',
+        '010-6666-7777','010-7777-8888','010-8888-9999','010-9999-0000','010-1010-2020',
+        '010-2020-3030','010-3030-4040',
+      ];
+      const isSampleCustomer = samplePhones.includes(phone);
+
+      if (isSampleCustomer) {
+        // 샘플 고객도 기존 고객으로 처리 → PIN 폼 (PIN 검증은 loginExistingCustomer에서)
+        document.getElementById('customer-existing-form').style.display = 'block';
+        setTimeout(() => document.getElementById('customer-pin').focus(), 100);
+      } else {
+        // 완전 신규 고객 → 이름+전화번호 폼
+        document.getElementById('customer-new-form').style.display = 'block';
+        document.getElementById('customer-phone-new').value = phone;
+        setTimeout(() => document.getElementById('customer-name-new').focus(), 100);
+      }
     }
     return;
   }
