@@ -407,7 +407,7 @@
   .tab-section-header h2 { font-size: 24px; font-weight: 800; color: var(--text); }
   .tab-section-header p { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
   .schedule-full-list { background: white; border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); overflow: hidden; }
-  .schedule-full-item { display: flex; gap: 16px; padding: 18px 24px; border-bottom: 1px solid var(--border); align-items: center; cursor: pointer; transition: background 0.15s; }
+  .schedule-full-item { display: flex; gap: 16px; padding: 16px 24px; border-bottom: 1px solid var(--border); transition: background 0.15s; }
   .schedule-full-item:last-child { border-bottom: none; }
   .schedule-full-item:hover { background: var(--primary-light); }
   .schedule-full-time { font-size: 16px; font-weight: 700; color: var(--text); width: 60px; flex-shrink: 0; }
@@ -1998,27 +1998,35 @@ function formatPhoneNumber(input) {
   else input.value = value.slice(0,3) + '-' + value.slice(3,7) + '-' + value.slice(7);
 }
 
+// 이름으로 고객 ID 찾기
+function findCustomerIdByName(name) {
+  const found = allCustomers.find(c => c.name === name);
+  return found ? found.id : null;
+}
+
 function renderSchedule() {
   const schedules = [
-    { time:'09:00', ampm:'오전', name:'김민서',  desc:'전신 관리·60분',    status:'done',   color:'#2d8a4e' },
-    { time:'10:30', ampm:'오전', name:'박서연',  desc:'두경부 케어·45분',  status:'done',   color:'#2d8a4e' },
-    { time:'13:00', ampm:'오후', name:'강민준',  desc:'허리 집중·90분',    status:'active', color:'#1a6b8a' },
-    { time:'14:30', ampm:'오후', name:'이준호',  desc:'척추 집중·90분',    status:'wait',   color:'#b0bac5' },
-    { time:'16:00', ampm:'오후', name:'서지우',  desc:'전신 관리·60분',    status:'wait',   color:'#b0bac5' },
-    { time:'17:30', ampm:'오후', name:'신동혁',  desc:'하체 집중·60분',    status:'new',    color:'#e8a020' },
+    { time:'09:00', ampm:'오전', name:'김민서', desc:'전신 관리·60분',   status:'done',   color:'#2d8a4e', demoId:'demo-1' },
+    { time:'10:30', ampm:'오전', name:'박서연', desc:'두경부 케어·45분', status:'done',   color:'#2d8a4e', demoId:'demo-3' },
+    { time:'13:00', ampm:'오후', name:'강민준', desc:'허리 집중·90분',   status:'active', color:'#1a6b8a', demoId:'demo-8' },
+    { time:'14:30', ampm:'오후', name:'이준호', desc:'척추 집중·90분',   status:'wait',   color:'#b0bac5', demoId:'demo-2' },
+    { time:'16:00', ampm:'오후', name:'서지우', desc:'전신 관리·60분',   status:'wait',   color:'#b0bac5', demoId:'demo-11' },
+    { time:'17:30', ampm:'오후', name:'신동혁', desc:'하체 집중·60분',   status:'new',    color:'#e8a020', demoId:'demo-15' },
   ];
   const statusMap = { done:'완료', active:'진행 중', wait:'대기', new:'신규' };
   const classMap = { done:'status-done', active:'status-active', wait:'status-wait', new:'status-new' };
-  document.getElementById('schedule-list').innerHTML = schedules.map(s => `
-    <div class="schedule-item">
+  document.getElementById('schedule-list').innerHTML = schedules.map(s => {
+    const cid = findCustomerIdByName(s.name) || s.demoId;
+    return `<div class="schedule-item">
       <div class="schedule-time">${s.time}<div class="schedule-ampm">${s.ampm}</div></div>
       <div class="schedule-bar" style="background:${s.color}"></div>
       <div class="schedule-info">
-        <div class="schedule-name">${s.name}</div>
+        <div class="schedule-name" style="cursor:pointer;color:var(--primary)" onclick="if('${cid}')openCustomerDetail('${cid}')">${s.name}</div>
         <div class="schedule-desc">${s.desc}</div>
       </div>
       <div class="schedule-status ${classMap[s.status]}">${statusMap[s.status]}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 async function openTherapistNote(customerId) {
@@ -2301,25 +2309,54 @@ function renderScheduleFull() {
   if (el) el.textContent = `${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 · 총 6건`;
 
   const schedules = [
-    { time:'09:00', name:'김영희', desc:'전신 관리 · 60분', status:'done', color:'#2d8a4e' },
-    { time:'10:30', name:'오세준', desc:'척추 집중 · 90분', status:'done', color:'#2d8a4e' },
-    { time:'13:00', name:'윤지호', desc:'어깨·목 케어 · 45분', status:'active', color:'#1a6b8a' },
-    { time:'14:30', name:'김민서', desc:'전신 관리 · 60분', status:'wait', color:'#6b7a8d' },
-    { time:'16:00', name:'강하늘', desc:'하체 집중 · 60분', status:'wait', color:'#6b7a8d' },
-    { time:'17:30', name:'신예린', desc:'상담 + 전신 · 75분', status:'new', color:'#e8a020' },
+    { time:'09:00', ampm:'오전', name:'김민서', desc:'전신 관리·60분',   status:'done',   color:'#2d8a4e', demoId:'demo-1',  visitData: (sampleVisits['demo-1']||[])[0] || null },
+    { time:'10:30', ampm:'오전', name:'박서연', desc:'두경부 케어·45분', status:'done',   color:'#2d8a4e', demoId:'demo-3',  visitData: (sampleVisits['demo-3']||[])[0] || null },
+    { time:'13:00', ampm:'오후', name:'강민준', desc:'허리 집중·90분',   status:'active', color:'#1a6b8a', demoId:'demo-8',  visitData: (sampleVisits['demo-8']||[])[0] || null },
+    { time:'14:30', ampm:'오후', name:'이준호', desc:'척추 집중·90분',   status:'wait',   color:'#b0bac5', demoId:'demo-2',  visitData: (sampleVisits['demo-2']||[])[0] || null },
+    { time:'16:00', ampm:'오후', name:'서지우', desc:'전신 관리·60분',   status:'wait',   color:'#b0bac5', demoId:'demo-11', visitData: null },
+    { time:'17:30', ampm:'오후', name:'신동혁', desc:'하체 집중·60분',   status:'new',    color:'#e8a020', demoId:'demo-15', visitData: null },
   ];
   const statusMap = { done:'완료', active:'진행 중', wait:'대기', new:'신규' };
   const classMap = { done:'status-done', active:'status-active', wait:'status-wait', new:'status-new' };
-  document.getElementById('schedule-full-list').innerHTML = schedules.map(s => `
-    <div class="schedule-full-item">
-      <div class="schedule-full-time">${s.time}</div>
-      <div class="schedule-full-bar" style="background:${s.color}"></div>
-      <div class="schedule-full-info">
-        <div class="schedule-full-name">${s.name}</div>
-        <div class="schedule-full-desc">${s.desc}</div>
+
+  document.getElementById('schedule-full-list').innerHTML = schedules.map(s => {
+    const cid = findCustomerIdByName(s.name) || s.demoId;
+    const customer = allCustomers.find(c => c.id === cid) || { name: s.name, phone: '-' };
+    const v = s.visitData;
+
+    // 문진 박스
+    let intakeBox = '';
+    if (v && v.pain_area) {
+      intakeBox = `<div style="margin-top:8px;padding:8px 12px;background:var(--primary-light);border-radius:6px;font-size:12px;color:var(--text)">
+        <span style="font-weight:700;color:var(--primary)">📋 문진 완료</span>
+        <span style="margin-left:8px"><span class="condition-chip chip-pain" style="font-size:11px">${v.pain_area}</span></span>
+        <span class="condition-chip chip-level" style="font-size:11px;margin-left:4px">${v.pain_level||'-'}/10</span>
+        ${v.therapist_notes ? `<div style="margin-top:4px;color:var(--text-muted)">${v.therapist_notes.substring(0,60)}…</div>` : ''}
+      </div>`;
+    } else {
+      intakeBox = `<div style="margin-top:8px;padding:8px 12px;background:var(--gray-light);border-radius:6px;font-size:12px;color:var(--text-muted);display:flex;align-items:center;justify-content:space-between">
+        <span>📋 문진 미입력</span>
+        <button onclick="event.stopPropagation();sendIntakeLink({name:'${s.name}',phone:'${customer.phone}'})"
+          style="padding:3px 10px;background:var(--teal);color:white;border:none;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer">링크 발송</button>
+      </div>`;
+    }
+
+    return `<div class="schedule-full-item" style="flex-direction:column;align-items:stretch;cursor:default">
+      <div style="display:flex;align-items:center;gap:16px">
+        <div style="flex-shrink:0;text-align:center;width:52px">
+          <div style="font-size:15px;font-weight:700;color:var(--text)">${s.time}</div>
+          <div style="font-size:10px;color:var(--text-muted)">${s.ampm}</div>
+        </div>
+        <div class="schedule-full-bar" style="background:${s.color};align-self:stretch"></div>
+        <div style="flex:1">
+          <div class="schedule-full-name" style="cursor:pointer;color:var(--primary)" onclick="if('${cid}')openCustomerDetail('${cid}')">${s.name}</div>
+          <div class="schedule-full-desc">${s.desc}</div>
+        </div>
+        <div class="schedule-full-status ${classMap[s.status]}">${statusMap[s.status]}</div>
       </div>
-      <div class="schedule-full-status ${classMap[s.status]}">${statusMap[s.status]}</div>
-    </div>`).join('');
+      ${intakeBox}
+    </div>`;
+  }).join('');
 }
 
 function renderCustomerListFull(customers) {
