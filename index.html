@@ -456,6 +456,29 @@
       <div class="login-hint">데모: 아이디 kimgihwa / 비밀번호 1234</div>
     </div>
 
+    <!-- ── 고객 직접 입력 섹션 (기본 표시) ── -->
+    <div id="customer-direct-section" style="display:none">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:40px;margin-bottom:8px">💆</div>
+        <div style="font-size:15px;font-weight:700;color:var(--text)">방문 전 컨디션을 알려주세요</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:4px">예약하신 정보를 입력해주세요</div>
+      </div>
+      <div class="form-group">
+        <label>이름</label>
+        <input type="text" id="direct-name" placeholder="홍길동" style="font-size:16px"
+          onkeydown="if(event.key==='Enter')document.getElementById('direct-phone').focus()">
+      </div>
+      <div class="form-group">
+        <label>전화번호</label>
+        <input type="tel" id="direct-phone" placeholder="010-1234-5678"
+          inputmode="numeric" maxlength="13"
+          oninput="formatPhoneNumber(this)"
+          onkeydown="if(event.key==='Enter')submitDirectCustomer()">
+      </div>
+      <button class="btn-primary" onclick="submitDirectCustomer()">문진 시작하기 →</button>
+      <div class="login-hint">선택사항이에요. 원장님이 더 잘 케어해드릴 수 있어요 😊</div>
+    </div>
+
     <!-- ── 고객 전용 섹션 (?phone= 있을 때) ── -->
     <div id="customer-only-section" style="display:none">
       <!-- 로딩 -->
@@ -829,6 +852,23 @@
     </div>
     <div class="progress-bar"><div class="progress-fill" style="width:20%"></div></div>
     <div class="progress-text">1/5 완료</div>
+
+    <!-- 0. 생년월일 (선택) -->
+    <div class="intake-section">
+      <div class="section-num-title">
+        <div class="section-num" style="background:var(--teal-light);color:var(--teal)">0</div>
+        <div class="section-title-wrap">
+          <h3>생년월일 <span style="display:inline-block;background:var(--gray-light);color:var(--text-muted);font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:6px;vertical-align:middle">선택</span></h3>
+          <p>원장님이 나이에 맞는 케어를 해드릴 수 있어요</p>
+        </div>
+      </div>
+      <input type="date" id="birth-date"
+        style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:15px;outline:none;font-family:inherit;transition:border-color 0.2s"
+        max="2010-12-31" min="1930-01-01">
+      <div id="birth-readonly-msg" style="display:none;margin-top:8px;padding:10px 14px;background:var(--gray-light);border-radius:var(--radius-sm);font-size:13px;color:var(--text-muted)">
+        ✓ 이전에 입력하신 생년월일입니다
+      </div>
+    </div>
 
     <!-- 1. 불편한 부위 -->
     <div class="intake-section">
@@ -1399,6 +1439,7 @@ function showScreen(name, skipHistory = false) {
     // 탭을 항상 메인(대시보드)으로 리셋
     setTimeout(() => showDashTab('main'), 0);
   }
+  if (name === 'intake') initIntakeScreen();
   if (name === 'report') initReport();
 }
 
@@ -1483,6 +1524,53 @@ async function loginNewCustomer() {
 
 // 하위 호환 (더 이상 직접 사용 안 함)
 function loginCustomer() { loginExistingCustomer(); }
+
+async function submitDirectCustomer() {
+  const name = document.getElementById('direct-name').value.trim();
+  const phone = document.getElementById('direct-phone').value.trim();
+  if (!name) { showToast('이름을 입력해주세요', 'error'); return; }
+  if (!phone || phone.replace(/\D/g,'').length < 10) { showToast('전화번호를 입력해주세요', 'error'); return; }
+
+  const { data: existing } = await db.from('customers').select('*').eq('phone', phone).single();
+  if (existing) {
+    if (existing.name.trim() !== name.trim()) {
+      showToast('이름 또는 전화번호를 확인해주세요', 'error');
+      return;
+    }
+    currentCustomer = existing;
+    window._existingBirth = existing.birth_date || '';
+    showToast(existing.name + '님, 다시 오셨군요! 반갑습니다 😊', 'success');
+    setTimeout(() => showScreen('intake'), 1200);
+  } else {
+    const { data: created, error } = await db.from('customers')
+      .insert([{ name, phone, created_at: new Date().toISOString() }])
+      .select().single();
+    if (error) { showToast('오류가 발생했습니다. 다시 시도해주세요', 'error'); return; }
+    currentCustomer = created;
+    window._existingBirth = '';
+    showToast('처음 방문이시군요! 환영합니다 🎉', 'success');
+    setTimeout(() => showScreen('intake'), 1200);
+  }
+}
+
+function initIntakeScreen() {
+  const birthInput = document.getElementById('birth-date');
+  const readonlyMsg = document.getElementById('birth-readonly-msg');
+  if (!birthInput) return;
+  if (window._existingBirth) {
+    birthInput.value = window._existingBirth;
+    birthInput.setAttribute('readonly', true);
+    birthInput.style.background = 'var(--gray-light)';
+    birthInput.style.color = 'var(--text-muted)';
+    if (readonlyMsg) readonlyMsg.style.display = 'block';
+  } else {
+    birthInput.value = '';
+    birthInput.removeAttribute('readonly');
+    birthInput.style.background = '';
+    birthInput.style.color = '';
+    if (readonlyMsg) readonlyMsg.style.display = 'none';
+  }
+}
 
 function logout() {
   sessionStorage.removeItem('tc_role');
@@ -2254,6 +2342,11 @@ async function submitIntake() {
   const { data: visit, error } = await db.from('visits').insert([data]).select().single();
   if (error) { showToast('저장 중 오류가 발생했습니다', 'error'); return; }
   currentVisit = visit;
+  // 생년월일 저장
+  const birthVal = document.getElementById('birth-date') ? document.getElementById('birth-date').value : '';
+  if (birthVal && currentCustomer && !window._existingBirth) {
+    await db.from('customers').update({ birth_date: birthVal }).eq('id', currentCustomer.id);
+  }
   // 폼 영역 숨기고 완료 화면 표시
   const content = document.querySelector('#screen-intake .content');
   const footer = document.querySelector('#screen-intake .intake-footer');
@@ -2749,6 +2842,14 @@ if (sessionStorage.getItem('tc_role') === 'therapist') {
   const visitId = params.get('visit');
   const token = params.get('token');
   const phone = params.get('phone');
+  const isAdmin = params.get('admin') === '1';
+
+  // 기본(파라미터 없을 때) → 고객용 직접 입력 화면
+  if (!isAdmin && !phone && !reportCustomerId && !token) {
+    document.getElementById('therapist-login-section').style.display = 'none';
+    document.getElementById('customer-direct-section').style.display = 'block';
+    document.getElementById('login-subtitle').textContent = '방문 전 컨디션 입력';
+  }
 
   // ── 리포트 직접 열기
   if (reportCustomerId) {
