@@ -2001,12 +2001,16 @@ function viewReport(customerId, visitNum) {
 
 function sendVisitReportLink(customerId, phone, visitNum) {
   const customer = (allCustomers||[]).find(c => c.id === customerId);
-  if (!customer) return;
+  const name = customer ? customer.name : '고객';
   const baseUrl = 'https://touch-care.vercel.app';
   const link = baseUrl + '?report=' + customerId;
-  const msg = '[천지안마원] ' + customer.name + '님 ' + visitNum + '회차 케어 리포트가 준비됐어요\n\n' + link;
-  navigator.clipboard.writeText(msg).catch(()=>{});
-  showToast('리포트 링크가 복사됐어요! 📱', 'success');
+  const msg = '[천지안마원] ' + name + '님 케어 리포트가 준비됐어요 😊\n아래 링크에서 확인하세요:\n' + link;
+  _reportLink = link;
+  _reportMsg = msg;
+  document.getElementById('report-modal-sub').textContent = name + '님께 리포트 링크를 발송합니다';
+  document.getElementById('report-modal-link').textContent = link;
+  document.getElementById('report-modal-msg').textContent = msg;
+  document.getElementById('report-modal').style.display = 'flex';
 }
 
 function toggleHC(i) {
@@ -2734,6 +2738,26 @@ if (sessionStorage.getItem('tc_role') === 'therapist') {
 
   // ── 리포트 직접 열기
   if (reportCustomerId) {
+    if (reportCustomerId.startsWith('demo-')) {
+      // 데모 고객은 Supabase 조회 없이 처리
+      const demoMap = {
+        'demo-1':  { name:'김민서', age:45, phone:'010-1234-5678', is_vip:true,  main_symptom:'어깨 결림' },
+        'demo-2':  { name:'이준호', age:52, phone:'010-2345-6789', is_vip:false, main_symptom:'허리 통증' },
+        'demo-3':  { name:'박서연', age:38, phone:'010-3456-7890', is_vip:true,  main_symptom:'두통·목 결림' },
+        'demo-8':  { name:'강민준', age:44, phone:'010-8901-2345', is_vip:true,  main_symptom:'허리 디스크' },
+        'demo-11': { name:'서지우', age:61, phone:'010-1234-5670', is_vip:true,  main_symptom:'오십견' },
+      };
+      const demoCustomer = demoMap[reportCustomerId];
+      if (demoCustomer) {
+        currentCustomer = { id: reportCustomerId, ...demoCustomer };
+        currentVisit = null;
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('screen-report').classList.add('active');
+        initReport();
+        return;
+      }
+    }
+    // 실제 DB 고객
     const { data: customer } = await db.from('customers').select('*').eq('id', reportCustomerId).single();
     if (customer) {
       currentCustomer = customer;
@@ -2741,7 +2765,9 @@ if (sessionStorage.getItem('tc_role') === 'therapist') {
         const { data: visit } = await db.from('visits').select('*').eq('id', visitId).single();
         currentVisit = visit || null;
       }
-      showScreen('report');
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('screen-report').classList.add('active');
+      initReport();
       return;
     }
     showToast('리포트를 불러올 수 없습니다.', 'error');
