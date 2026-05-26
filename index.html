@@ -542,6 +542,21 @@
     <div class="header-right">
       <button onclick="showDashTab('schedule')" style="padding:8px 16px;border:1.5px solid var(--border);background:white;border-radius:var(--radius-sm);font-size:13px;font-weight:600;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:6px">≡ 주간 리포트</button>
       <button style="padding:8px 18px;background:var(--primary);color:white;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px" onclick="alert('예약 등록 기능은 준비 중입니다')">+ 예약 등록</button>
+      <div style="position:relative" id="bell-wrap">
+        <button onclick="toggleNotifications()" style="padding:8px;background:transparent;border:none;cursor:pointer;font-size:20px;position:relative">
+          🔔
+          <span id="bell-badge" style="display:none;position:absolute;top:2px;right:2px;width:16px;height:16px;background:var(--danger);border-radius:50%;font-size:10px;font-weight:700;color:white;line-height:16px;text-align:center">
+            <span id="bell-count">0</span>
+          </span>
+        </button>
+        <div id="notification-panel" style="display:none;position:absolute;top:48px;right:0;width:300px;background:white;border-radius:var(--radius);box-shadow:var(--shadow-lg);border:1px solid var(--border);z-index:200">
+          <div style="padding:12px 16px;border-bottom:1px solid var(--border);font-weight:700;font-size:14px;display:flex;justify-content:space-between;align-items:center">
+            🔔 알림
+            <span onclick="clearNotifications()" style="font-size:11px;color:var(--text-muted);cursor:pointer;font-weight:400">모두 지우기</span>
+          </div>
+          <div id="notification-list" style="max-height:320px;overflow-y:auto;padding:4px 0"></div>
+        </div>
+      </div>
       <button onclick="logout()" style="padding:8px 16px;background:transparent;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;color:var(--text-muted);cursor:pointer">로그아웃</button>
     </div>
   </div>
@@ -836,7 +851,7 @@
 ═══════════════════════════════════════════ -->
 <div id="screen-intake" class="screen">
   <div class="header">
-    <div class="logo" style="cursor:pointer" onclick="showScreen('dashboard')">
+    <div class="logo">
       <div class="logo-icon"><img src="logo.png" style="width:36px;height:36px;object-fit:contain;border-radius:8px"></div>
       <div class="logo-text"><h1>TouchCare</h1><p>천지안마원 · 방문 전 문진</p></div>
     </div>
@@ -1058,7 +1073,7 @@
 ═══════════════════════════════════════════ -->
 <div id="screen-therapist" class="screen">
   <div class="header">
-    <div class="logo" style="cursor:pointer" onclick="showScreen('dashboard')">
+    <div class="logo">
       <div class="logo-icon"><img src="logo.png" style="width:36px;height:36px;object-fit:contain;border-radius:8px"></div>
       <div class="logo-text"><h1>TouchCare</h1><p>안마사 소견 입력</p></div>
     </div>
@@ -1231,7 +1246,7 @@
 ═══════════════════════════════════════════ -->
 <div id="screen-report" class="screen">
   <div class="header">
-    <div class="logo" style="cursor:pointer" onclick="showScreen('dashboard')">
+    <div class="logo">
       <div class="logo-icon"><img src="logo.png" style="width:36px;height:36px;object-fit:contain;border-radius:8px"></div>
       <div class="logo-text"><h1>TouchCare</h1><p>천지안마원 · AI 케어 리포트</p></div>
     </div>
@@ -1647,6 +1662,7 @@ async function loadDashboard() {
 
   filteredCustomers = [...allCustomers];
   renderSchedule();
+  initRealtimeNotifications();
 
   // customer-list 이벤트 위임 — cloneNode로 기존 리스너 제거 후 최초 1회 등록
   const oldList = document.getElementById('customer-list');
@@ -1897,6 +1913,10 @@ function renderCustomerDetailUI(customer, visits) {
   avEl.style.background = ACOLORS[ci];
 
   document.getElementById('cd-name').textContent = (customer.name || '-') + ' 님';
+  if (customer.birth_date && !customer.age) {
+    const birth = new Date(customer.birth_date);
+    customer.age = new Date().getFullYear() - birth.getFullYear();
+  }
   document.getElementById('cd-sub').textContent = `${customer.age||'-'}세 · ${customer.phone||'-'}`;
 
   // 방문 통계
@@ -2344,7 +2364,7 @@ async function submitIntake() {
   currentVisit = visit;
   // 생년월일 저장
   const birthVal = document.getElementById('birth-date') ? document.getElementById('birth-date').value : '';
-  if (birthVal && currentCustomer && !window._existingBirth) {
+  if (birthVal && currentCustomer && currentCustomer.id) {
     await db.from('customers').update({ birth_date: birthVal }).eq('id', currentCustomer.id);
   }
   // 폼 영역 숨기고 완료 화면 표시
@@ -2652,6 +2672,66 @@ function filterCustomersTab(type) {
   else if (type === 'vip') renderCustomerListFull(allCustomers.filter(c => c.is_vip));
   else renderCustomerListFull(allCustomers);
 }
+
+// ══════════════════════════════════════════════
+// 실시간 알림
+// ══════════════════════════════════════════════
+let _notifications = [];
+
+function initRealtimeNotifications() {
+  if (window._realtimeInitialized) return;
+  window._realtimeInitialized = true;
+  db.channel('visits-realtime')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'visits' }, (payload) => {
+      const v = payload.new;
+      const customer = (allCustomers||[]).find(c => c.id === v.customer_id);
+      const name = customer ? customer.name : '신규 고객';
+      addNotification('📋 ' + name + '님이 문진을 완료했습니다');
+    })
+    .subscribe();
+}
+
+function toggleNotifications() {
+  const panel = document.getElementById('notification-panel');
+  const isOpen = panel.style.display === 'block';
+  panel.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) document.getElementById('bell-badge').style.display = 'none';
+}
+
+function clearNotifications() {
+  _notifications = [];
+  document.getElementById('notification-list').innerHTML =
+    '<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px">알림이 없습니다</div>';
+  document.getElementById('bell-badge').style.display = 'none';
+}
+
+function addNotification(msg) {
+  _notifications.unshift({ msg, time: new Date() });
+  const list = document.getElementById('notification-list');
+  const badge = document.getElementById('bell-badge');
+  const count = document.getElementById('bell-count');
+  if (list) {
+    list.innerHTML = _notifications.map(n =>
+      '<div style="padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px">' +
+      '<div style="font-weight:600;color:var(--text)">' + n.msg + '</div>' +
+      '<div style="font-size:11px;color:var(--text-muted);margin-top:3px">' +
+      n.time.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}) + '</div>' +
+      '</div>'
+    ).join('');
+  }
+  if (badge) {
+    badge.style.display = 'inline-block';
+    if (count) count.textContent = _notifications.length;
+  }
+}
+
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('bell-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    const panel = document.getElementById('notification-panel');
+    if (panel) panel.style.display = 'none';
+  }
+});
 
 // ══════════════════════════════════════════════
 // 신규 고객 문진 링크 생성
