@@ -1358,44 +1358,45 @@ async function loadDashboard() {
   const dbCustomers = customers || [];
   allTodayVisits = visits || [];
 
-  if (dbCustomers.length === 0) {
-    allCustomers = [
-      { id:'demo-1',  name:'김민서',  age:45, phone:'010-1234-5678', main_symptom:'어깨 결림',          visit_count:38, last_visit:'2026.04.18', is_vip:true,  next_appt:'오늘 14:30',    memo:'장시간 컴퓨터 작업, 오십견 초기' },
-      { id:'demo-2',  name:'이준호',  age:52, phone:'010-2345-6789', main_symptom:'허리 통증',          visit_count:12, last_visit:'2026.04.15', is_vip:false, next_appt:'4월 26일(일)',  memo:'요추 4번 디스크, 물리치료 병행' },
-      { id:'demo-3',  name:'박서연',  age:38, phone:'010-3456-7890', main_symptom:'두통·목 결림',      visit_count:64, last_visit:'2026.04.21', is_vip:true,  next_appt:'4월 28일(화)',  memo:'일자목 증후군, 정기 관리' },
-      { id:'demo-4',  name:'최지훈',  age:41, phone:'010-4567-8901', main_symptom:'무릎 근육통',       visit_count:7,  last_visit:'2026.04.10', is_vip:false, next_appt:'5월 2일(토)',   memo:'마라톤 훈련 중 부상' },
-      { id:'demo-5',  name:'정수아',  age:29, phone:'010-5678-9012', main_symptom:'손목·팔 피로',      visit_count:3,  last_visit:'2026.04.19', is_vip:false, next_appt:'4월 25일(토)',  memo:'카페 바리스타, 손목 반복 사용' },
-      { id:'demo-6',  name:'한도현',  age:56, phone:'010-6789-0123', main_symptom:'종아리 부종',       visit_count:21, last_visit:'2026.04.17', is_vip:false, next_appt:'미예약',        memo:'당뇨 보유, 하체 순환 불량' },
-      { id:'demo-7',  name:'윤지영',  age:33, phone:'010-7890-1234', main_symptom:'산후 골반 통증',    visit_count:15, last_visit:'2026.05.01', is_vip:false, next_appt:'5월 8일(금)',   memo:'출산 8개월, 골반 교정 목적' },
-      { id:'demo-8',  name:'강민준',  age:44, phone:'010-8901-2345', main_symptom:'허리 디스크',       visit_count:42, last_visit:'2026.04.28', is_vip:true,  next_appt:'5월 5일(화)',   memo:'L4-L5 디스크, 수술 거부 관리 중' },
-      { id:'demo-9',  name:'오세진',  age:37, phone:'010-9012-3456', main_symptom:'목 결림',           visit_count:8,  last_visit:'2026.04.22', is_vip:false, next_appt:'5월 6일(수)',   memo:'재택근무 3년차, 거북목' },
-      { id:'demo-10', name:'임하늘',  age:28, phone:'010-0123-4567', main_symptom:'두통',              visit_count:2,  last_visit:'2026.05.10', is_vip:false, next_appt:'5월 17일(일)',  memo:'만성 편두통, 첫 안마 경험' },
-      { id:'demo-11', name:'서지우',  age:61, phone:'010-1234-5670', main_symptom:'오십견',            visit_count:55, last_visit:'2026.05.05', is_vip:true,  next_appt:'5월 12일(화)',  memo:'양쪽 오십견, 한방 병행' },
-      { id:'demo-12', name:'배수현',  age:49, phone:'010-2345-6780', main_symptom:'골반 통증',         visit_count:19, last_visit:'2026.04.30', is_vip:false, next_appt:'5월 7일(목)',   memo:'갱년기, 골반 불균형' },
-      { id:'demo-13', name:'황민기',  age:35, phone:'010-3456-7891', main_symptom:'종아리 경련',       visit_count:6,  last_visit:'2026.04.25', is_vip:false, next_appt:'미예약',        memo:'축구 동호회 활동 중 부상' },
-      { id:'demo-14', name:'조예린',  age:27, phone:'010-4567-8902', main_symptom:'손목 통증',         visit_count:4,  last_visit:'2026.05.08', is_vip:false, next_appt:'5월 15일(금)',  memo:'웹툰 작가, 손목 건초염' },
-      { id:'demo-15', name:'신동혁',  age:53, phone:'010-5678-9013', main_symptom:'허리 협착증',       visit_count:33, last_visit:'2026.04.20', is_vip:true,  next_appt:'5월 4일(월)',   memo:'척추관 협착증, 보존적 치료 중' },
-      { id:'demo-16', name:'류지수',  age:31, phone:'010-6789-0124', main_symptom:'목·어깨 통증',     visit_count:9,  last_visit:'2026.05.03', is_vip:false, next_appt:'5월 10일(토)',  memo:'간호사, 장시간 서서 근무' },
-      { id:'demo-17', name:'문성훈',  age:48, phone:'010-7890-1235', main_symptom:'무릎 관절통',       visit_count:27, last_visit:'2026.04.26', is_vip:false, next_appt:'5월 3일(일)',   memo:'퇴행성 관절염 초기' },
-      { id:'demo-18', name:'전미래',  age:39, phone:'010-8901-2346', main_symptom:'어깨 결림',         visit_count:11, last_visit:'2026.05.07', is_vip:false, next_appt:'5월 14일(목)',  memo:'어린이집 교사, 아이 안기 반복' },
-      { id:'demo-19', name:'안준서',  age:22, phone:'010-9012-3457', main_symptom:'운동 후 근육통',    visit_count:1,  last_visit:'2026.05.12', is_vip:false, next_appt:'미예약',        memo:'헬스 시작 2개월, 과훈련 증상' },
-      { id:'demo-20', name:'남하린',  age:43, phone:'010-0123-4568', main_symptom:'허리 통증',         visit_count:16, last_visit:'2026.04.29', is_vip:false, next_appt:'5월 6일(수)',   memo:'택배 기사, 무거운 짐 반복 운반' },
-      { id:'demo-21', name:'송재원',  age:58, phone:'010-1111-2222', main_symptom:'경추 디스크',       visit_count:47, last_visit:'2026.05.02', is_vip:true,  next_appt:'5월 9일(토)',   memo:'C5-C6 디스크, 팔 저림 동반' },
-      { id:'demo-22', name:'백지혜',  age:36, phone:'010-2222-3333', main_symptom:'골반 불균형',       visit_count:13, last_visit:'2026.05.06', is_vip:false, next_appt:'5월 13일(수)',  memo:'다리 길이 차이, 자세 교정 목적' },
-      { id:'demo-23', name:'고은성',  age:51, phone:'010-3333-4444', main_symptom:'오십견',            visit_count:31, last_visit:'2026.04.27', is_vip:true,  next_appt:'5월 4일(월)',   memo:'우측 오십견 심함, 주사 치료 병행' },
-      { id:'demo-24', name:'차민호',  age:46, phone:'010-4444-5555', main_symptom:'하체 부종',         visit_count:18, last_visit:'2026.05.04', is_vip:false, next_appt:'5월 11일(일)',  memo:'요리사, 하루 10시간 기립 근무' },
-      { id:'demo-25', name:'양수진',  age:32, phone:'010-5555-6666', main_symptom:'손목·팔 피로',      visit_count:5,  last_visit:'2026.05.09', is_vip:false, next_appt:'5월 16일(토)',  memo:'피아니스트, 연습 후 통증' },
-      { id:'demo-26', name:'허재원',  age:67, phone:'010-6666-7777', main_symptom:'전신 피로',         visit_count:72, last_visit:'2026.05.01', is_vip:true,  next_appt:'5월 8일(금)',   memo:'은퇴 후 정기 관리, VIP 10년 단골' },
-      { id:'demo-27', name:'천보람',  age:25, phone:'010-7777-8888', main_symptom:'스트레스성 두통',   visit_count:2,  last_visit:'2026.05.11', is_vip:false, next_appt:'미예약',        memo:'취업 준비 스트레스, 수면 부족' },
-      { id:'demo-28', name:'마지혜',  age:55, phone:'010-8888-9999', main_symptom:'무릎 연골 손상',    visit_count:24, last_visit:'2026.04.24', is_vip:false, next_appt:'5월 1일(금)',   memo:'연골 연화증, 계단 통증 심함' },
-      { id:'demo-29', name:'진우석',  age:40, phone:'010-9999-0000', main_symptom:'어깨 충돌 증후군',  visit_count:10, last_visit:'2026.05.05', is_vip:false, next_appt:'5월 12일(화)',  memo:'수영 선수 출신, 회전근개 문제' },
-      { id:'demo-30', name:'표나연',  age:34, phone:'010-1010-2020', main_symptom:'허리 근막염',       visit_count:7,  last_visit:'2026.05.08', is_vip:false, next_appt:'미예약',        memo:'임신 5개월, 허리 근육 긴장' },
-      { id:'demo-31', name:'국민준',  age:42, phone:'010-2020-3030', main_symptom:'목 디스크',         visit_count:29, last_visit:'2026.04.23', is_vip:false, next_appt:'5월 3일(일)',   memo:'C3-C4 디스크, 두통 동반' },
-      { id:'demo-32', name:'태소희',  age:30, phone:'010-3030-4040', main_symptom:'갱년기 근육통',     visit_count:14, last_visit:'2026.05.06', is_vip:false, next_appt:'5월 13일(수)',  memo:'조기 폐경, 전신 근육통' },
-    ];
-  } else {
-    allCustomers = dbCustomers;
-  }
+  const sampleCustomers = [
+    { id:'demo-1',  name:'김민서',  age:45, phone:'010-1234-5678', main_symptom:'어깨 결림',          visit_count:38, last_visit:'2026.04.18', is_vip:true,  next_appt:'오늘 14:30',    memo:'장시간 컴퓨터 작업, 오십견 초기' },
+    { id:'demo-2',  name:'이준호',  age:52, phone:'010-2345-6789', main_symptom:'허리 통증',          visit_count:12, last_visit:'2026.04.15', is_vip:false, next_appt:'4월 26일(일)',  memo:'요추 4번 디스크, 물리치료 병행' },
+    { id:'demo-3',  name:'박서연',  age:38, phone:'010-3456-7890', main_symptom:'두통·목 결림',      visit_count:64, last_visit:'2026.04.21', is_vip:true,  next_appt:'4월 28일(화)',  memo:'일자목 증후군, 정기 관리' },
+    { id:'demo-4',  name:'최지훈',  age:41, phone:'010-4567-8901', main_symptom:'무릎 근육통',       visit_count:7,  last_visit:'2026.04.10', is_vip:false, next_appt:'5월 2일(토)',   memo:'마라톤 훈련 중 부상' },
+    { id:'demo-5',  name:'정수아',  age:29, phone:'010-5678-9012', main_symptom:'손목·팔 피로',      visit_count:3,  last_visit:'2026.04.19', is_vip:false, next_appt:'4월 25일(토)',  memo:'카페 바리스타, 손목 반복 사용' },
+    { id:'demo-6',  name:'한도현',  age:56, phone:'010-6789-0123', main_symptom:'종아리 부종',       visit_count:21, last_visit:'2026.04.17', is_vip:false, next_appt:'미예약',        memo:'당뇨 보유, 하체 순환 불량' },
+    { id:'demo-7',  name:'윤지영',  age:33, phone:'010-7890-1234', main_symptom:'산후 골반 통증',    visit_count:15, last_visit:'2026.05.01', is_vip:false, next_appt:'5월 8일(금)',   memo:'출산 8개월, 골반 교정 목적' },
+    { id:'demo-8',  name:'강민준',  age:44, phone:'010-8901-2345', main_symptom:'허리 디스크',       visit_count:42, last_visit:'2026.04.28', is_vip:true,  next_appt:'5월 5일(화)',   memo:'L4-L5 디스크, 수술 거부 관리 중' },
+    { id:'demo-9',  name:'오세진',  age:37, phone:'010-9012-3456', main_symptom:'목 결림',           visit_count:8,  last_visit:'2026.04.22', is_vip:false, next_appt:'5월 6일(수)',   memo:'재택근무 3년차, 거북목' },
+    { id:'demo-10', name:'임하늘',  age:28, phone:'010-0123-4567', main_symptom:'두통',              visit_count:2,  last_visit:'2026.05.10', is_vip:false, next_appt:'5월 17일(일)',  memo:'만성 편두통, 첫 안마 경험' },
+    { id:'demo-11', name:'서지우',  age:61, phone:'010-1234-5670', main_symptom:'오십견',            visit_count:55, last_visit:'2026.05.05', is_vip:true,  next_appt:'5월 12일(화)',  memo:'양쪽 오십견, 한방 병행' },
+    { id:'demo-12', name:'배수현',  age:49, phone:'010-2345-6780', main_symptom:'골반 통증',         visit_count:19, last_visit:'2026.04.30', is_vip:false, next_appt:'5월 7일(목)',   memo:'갱년기, 골반 불균형' },
+    { id:'demo-13', name:'황민기',  age:35, phone:'010-3456-7891', main_symptom:'종아리 경련',       visit_count:6,  last_visit:'2026.04.25', is_vip:false, next_appt:'미예약',        memo:'축구 동호회 활동 중 부상' },
+    { id:'demo-14', name:'조예린',  age:27, phone:'010-4567-8902', main_symptom:'손목 통증',         visit_count:4,  last_visit:'2026.05.08', is_vip:false, next_appt:'5월 15일(금)',  memo:'웹툰 작가, 손목 건초염' },
+    { id:'demo-15', name:'신동혁',  age:53, phone:'010-5678-9013', main_symptom:'허리 협착증',       visit_count:33, last_visit:'2026.04.20', is_vip:true,  next_appt:'5월 4일(월)',   memo:'척추관 협착증, 보존적 치료 중' },
+    { id:'demo-16', name:'류지수',  age:31, phone:'010-6789-0124', main_symptom:'목·어깨 통증',     visit_count:9,  last_visit:'2026.05.03', is_vip:false, next_appt:'5월 10일(토)',  memo:'간호사, 장시간 서서 근무' },
+    { id:'demo-17', name:'문성훈',  age:48, phone:'010-7890-1235', main_symptom:'무릎 관절통',       visit_count:27, last_visit:'2026.04.26', is_vip:false, next_appt:'5월 3일(일)',   memo:'퇴행성 관절염 초기' },
+    { id:'demo-18', name:'전미래',  age:39, phone:'010-8901-2346', main_symptom:'어깨 결림',         visit_count:11, last_visit:'2026.05.07', is_vip:false, next_appt:'5월 14일(목)',  memo:'어린이집 교사, 아이 안기 반복' },
+    { id:'demo-19', name:'안준서',  age:22, phone:'010-9012-3457', main_symptom:'운동 후 근육통',    visit_count:1,  last_visit:'2026.05.12', is_vip:false, next_appt:'미예약',        memo:'헬스 시작 2개월, 과훈련 증상' },
+    { id:'demo-20', name:'남하린',  age:43, phone:'010-0123-4568', main_symptom:'허리 통증',         visit_count:16, last_visit:'2026.04.29', is_vip:false, next_appt:'5월 6일(수)',   memo:'택배 기사, 무거운 짐 반복 운반' },
+    { id:'demo-21', name:'송재원',  age:58, phone:'010-1111-2222', main_symptom:'경추 디스크',       visit_count:47, last_visit:'2026.05.02', is_vip:true,  next_appt:'5월 9일(토)',   memo:'C5-C6 디스크, 팔 저림 동반' },
+    { id:'demo-22', name:'백지혜',  age:36, phone:'010-2222-3333', main_symptom:'골반 불균형',       visit_count:13, last_visit:'2026.05.06', is_vip:false, next_appt:'5월 13일(수)',  memo:'다리 길이 차이, 자세 교정 목적' },
+    { id:'demo-23', name:'고은성',  age:51, phone:'010-3333-4444', main_symptom:'오십견',            visit_count:31, last_visit:'2026.04.27', is_vip:true,  next_appt:'5월 4일(월)',   memo:'우측 오십견 심함, 주사 치료 병행' },
+    { id:'demo-24', name:'차민호',  age:46, phone:'010-4444-5555', main_symptom:'하체 부종',         visit_count:18, last_visit:'2026.05.04', is_vip:false, next_appt:'5월 11일(일)',  memo:'요리사, 하루 10시간 기립 근무' },
+    { id:'demo-25', name:'양수진',  age:32, phone:'010-5555-6666', main_symptom:'손목·팔 피로',      visit_count:5,  last_visit:'2026.05.09', is_vip:false, next_appt:'5월 16일(토)',  memo:'피아니스트, 연습 후 통증' },
+    { id:'demo-26', name:'허재원',  age:67, phone:'010-6666-7777', main_symptom:'전신 피로',         visit_count:72, last_visit:'2026.05.01', is_vip:true,  next_appt:'5월 8일(금)',   memo:'은퇴 후 정기 관리, VIP 10년 단골' },
+    { id:'demo-27', name:'천보람',  age:25, phone:'010-7777-8888', main_symptom:'스트레스성 두통',   visit_count:2,  last_visit:'2026.05.11', is_vip:false, next_appt:'미예약',        memo:'취업 준비 스트레스, 수면 부족' },
+    { id:'demo-28', name:'마지혜',  age:55, phone:'010-8888-9999', main_symptom:'무릎 연골 손상',    visit_count:24, last_visit:'2026.04.24', is_vip:false, next_appt:'5월 1일(금)',   memo:'연골 연화증, 계단 통증 심함' },
+    { id:'demo-29', name:'진우석',  age:40, phone:'010-9999-0000', main_symptom:'어깨 충돌 증후군',  visit_count:10, last_visit:'2026.05.05', is_vip:false, next_appt:'5월 12일(화)',  memo:'수영 선수 출신, 회전근개 문제' },
+    { id:'demo-30', name:'표나연',  age:34, phone:'010-1010-2020', main_symptom:'허리 근막염',       visit_count:7,  last_visit:'2026.05.08', is_vip:false, next_appt:'미예약',        memo:'임신 5개월, 허리 근육 긴장' },
+    { id:'demo-31', name:'국민준',  age:42, phone:'010-2020-3030', main_symptom:'목 디스크',         visit_count:29, last_visit:'2026.04.23', is_vip:false, next_appt:'5월 3일(일)',   memo:'C3-C4 디스크, 두통 동반' },
+    { id:'demo-32', name:'태소희',  age:30, phone:'010-3030-4040', main_symptom:'갱년기 근육통',     visit_count:14, last_visit:'2026.05.06', is_vip:false, next_appt:'5월 13일(수)',  memo:'조기 폐경, 전신 근육통' },
+  ];
+
+  // DB 고객의 phone 집합 → 중복 샘플 제외
+  const dbPhones = new Set(dbCustomers.map(c => c.phone).filter(Boolean));
+  const filteredSamples = sampleCustomers.filter(s => !dbPhones.has(s.phone));
+  allCustomers = [...dbCustomers, ...filteredSamples];
 
   const todayVisits = allTodayVisits;
   const isDemoMode = dbCustomers.length === 0;
