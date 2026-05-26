@@ -173,19 +173,70 @@
   .customer-table-footer a { color: var(--primary); text-decoration: none; font-weight: 600; font-size: 13px; }
 
   /* ── 고객 상세 화면 ── */
-  #screen-customer-detail { background: var(--bg); }
-  #screen-customer-detail .content { padding: 24px 32px; max-width: 800px; margin: 0 auto; flex: 1; }
-  .visit-history-item { display: flex; gap: 14px; padding: 16px 20px; border-bottom: 1px solid var(--border); align-items: flex-start; }
-  .visit-history-item:last-child { border-bottom: none; }
-  .visit-history-meta { flex-shrink: 0; width: 68px; text-align: center; }
-  .visit-date-label { font-size: 12px; color: var(--text-muted); }
-  .visit-round-badge { display: inline-block; background: var(--primary-light); color: var(--primary); font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 4px; margin-top: 3px; }
-  .visit-history-body { flex: 1; min-width: 0; }
-  .visit-history-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
-  .visit-history-note { font-size: 13px; color: var(--text); line-height: 1.5; }
+  #screen-customer-detail { background: var(--bg); flex-direction: column; }
+  .cd-body { display: flex; flex: 1; overflow: hidden; }
+  /* 사이드바 */
+  .cd-sidebar { width: 280px; flex-shrink: 0; background: white; border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; }
+  .cd-profile { background: var(--navy); color: white; padding: 24px 20px; }
+  .cd-avatar { width: 64px; height: 64px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 800; margin: 0 auto 12px; }
+  .cd-profile-name { font-size: 18px; font-weight: 800; text-align: center; margin-bottom: 4px; }
+  .cd-profile-sub { font-size: 12px; opacity: 0.7; text-align: center; margin-bottom: 10px; }
+  .cd-status-badges { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin-bottom: 14px; }
+  .cd-status-badge { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+  .cd-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .cd-stat-item { background: rgba(255,255,255,0.1); border-radius: 8px; padding: 9px 8px; text-align: center; }
+  .cd-stat-num { font-size: 18px; font-weight: 800; line-height: 1; }
+  .cd-stat-lbl { font-size: 10px; opacity: 0.7; margin-top: 2px; }
+  .cd-symptom-pill { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 4px; }
+  .cd-memo { background: rgba(255,255,255,0.1); border-radius: 8px; padding: 10px; font-size: 12px; opacity: 0.85; line-height: 1.55; margin-top: 10px; }
+  /* 사이드바 메뉴 */
+  .cd-nav { padding: 12px; flex: 1; }
+  .cd-nav-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 14px; border: none; background: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; cursor: pointer; color: var(--text-muted); transition: all 0.15s; margin-bottom: 4px; text-align: left; }
+  .cd-nav-btn:hover { background: var(--gray-light); color: var(--text); }
+  .cd-nav-btn.active { background: var(--primary-light); color: var(--primary); font-weight: 700; }
+  .cd-nav-btn.cta { background: var(--primary); color: white; margin-top: 8px; font-weight: 700; }
+  .cd-nav-btn.cta:hover { background: var(--primary-dark); }
+  /* 우측 콘텐츠 */
+  .cd-content { flex: 1; overflow-y: auto; padding: 24px; background: var(--bg); }
+  .cd-tab-panel { display: none; }
+  .cd-tab-panel.active { display: block; }
+  /* 히스토리 카드 */
+  .hc-card { background: white; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 12px; overflow: hidden; box-shadow: var(--shadow); }
+  .hc-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; cursor: pointer; user-select: none; transition: background 0.15s; }
+  .hc-header:hover { background: var(--gray-light); }
+  .hc-round { width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0; }
+  .hc-meta { flex: 1; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .hc-date { font-size: 13px; color: var(--text-muted); }
+  .hc-toggle { margin-left: auto; font-size: 12px; color: var(--text-muted); transition: transform 0.2s; }
+  .hc-body { display: none; border-top: 1px solid var(--border); padding: 18px; }
+  .hc-body.open { display: block; }
+  .hc-section { margin-bottom: 16px; }
+  .hc-section-title { font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .hc-row { display: flex; gap: 8px; align-items: flex-start; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .hc-row:last-child { border-bottom: none; }
+  .hc-key { width: 90px; flex-shrink: 0; color: var(--text-muted); font-size: 12px; }
+  .hc-val { flex: 1; color: var(--text); }
+  .tension-mini { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .tm-low  { background: var(--success-light); color: var(--success); }
+  .tm-mid  { background: var(--accent-light);  color: var(--accent); }
+  .tm-high { background: var(--danger-light);  color: var(--danger); }
+  /* 고객 정보 탭 */
+  .ci-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .ci-card { background: white; border-radius: var(--radius); border: 1px solid var(--border); padding: 20px; box-shadow: var(--shadow); }
+  .ci-card-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+  .ci-row { display: flex; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .ci-row:last-child { border-bottom: none; }
+  .ci-label { width: 96px; flex-shrink: 0; color: var(--text-muted); font-size: 12px; }
+  .ci-value { flex: 1; color: var(--text); font-weight: 500; }
+  /* 통계 탭 */
+  .stat-summary-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .stat-summary-card { background: white; border-radius: var(--radius); border: 1px solid var(--border); padding: 18px; text-align: center; box-shadow: var(--shadow); }
+  .stat-summary-num { font-size: 28px; font-weight: 800; color: var(--primary); }
+  .stat-summary-lbl { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  /* 기타 */
   .btn-detail-action { padding: 6px 13px; border: 1.5px solid var(--border); background: white; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; flex-shrink: 0; color: var(--text-muted); transition: all 0.15s; }
   .btn-detail-action:hover { border-color: var(--primary); color: var(--primary); }
-  .detail-cta { width: 100%; padding: 14px; background: var(--navy); color: white; border: none; border-radius: var(--radius-sm); font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s; }
+  .detail-cta { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.2s; }
   .detail-cta:hover { background: var(--primary-dark); }
 
   /* ── 고객 사전입력 (고객용) ── */
@@ -447,7 +498,7 @@
 ═══════════════════════════════════════════ -->
 <div id="screen-dashboard" class="screen">
   <div class="header">
-    <div class="logo">
+    <div class="logo" style="cursor:pointer" onclick="showScreen('dashboard')">
       <div class="logo-icon">
         <img src="logo.png" style="width:36px;height:36px;object-fit:contain;border-radius:8px">
       </div>
@@ -634,13 +685,12 @@
      고객 상세 화면
 ═══════════════════════════════════════════ -->
 <div id="screen-customer-detail" class="screen">
-  <!-- 대시보드와 동일한 헤더 -->
   <div class="header">
-    <div class="logo">
+    <div class="logo" style="cursor:pointer" onclick="showScreen('dashboard')">
       <div class="logo-icon"><img src="logo.png" style="width:36px;height:36px;object-fit:contain;border-radius:8px"></div>
-      <div class="logo-text"><h1>TouchCare</h1><p>천지안마원 · 고객 상세</p></div>
+      <div class="logo-text"><h1>TouchCare</h1><p>천지안마원 · 관리자</p></div>
     </div>
-    <div class="header-nav">
+    <div class="header-nav" id="detail-header-nav">
       <button class="nav-btn" onclick="showScreen('dashboard')">대시보드</button>
       <button class="nav-btn active">고객</button>
     </div>
@@ -650,71 +700,112 @@
     </div>
   </div>
 
-  <!-- 2컬럼 본문 -->
-  <div style="display:flex;gap:20px;padding:24px 32px;flex:1;background:var(--bg)">
-
-    <!-- ── 좌측: 고객 정보 카드 (35%) ── -->
-    <div style="width:35%;flex-shrink:0;display:flex;flex-direction:column;gap:16px">
-      <div class="card" style="padding:24px">
-        <!-- 아바타 + 이름 -->
-        <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
-          <div id="detail-avatar" style="width:56px;height:56px;border-radius:50%;background:var(--primary);color:white;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0">-</div>
-          <div>
-            <div style="display:flex;align-items:center;gap:6px">
-              <h2 id="detail-name" style="font-size:20px;font-weight:800;color:var(--text)">-</h2>
-              <span id="detail-vip-badge"></span>
-            </div>
-            <p id="detail-sub" style="font-size:13px;color:var(--text-muted);margin-top:2px">-</p>
+  <div class="cd-body">
+    <!-- ── 사이드바 ── -->
+    <div class="cd-sidebar">
+      <!-- 프로필 카드 (navy) -->
+      <div class="cd-profile">
+        <div class="cd-avatar" id="cd-avatar">?</div>
+        <div class="cd-profile-name" id="cd-name">-</div>
+        <div class="cd-profile-sub" id="cd-sub">-</div>
+        <div class="cd-status-badges" id="cd-badges"></div>
+        <div class="cd-stat-grid">
+          <div class="cd-stat-item">
+            <div class="cd-stat-num" id="cd-visit-count">-</div>
+            <div class="cd-stat-lbl">총 방문</div>
+          </div>
+          <div class="cd-stat-item">
+            <div class="cd-stat-num" id="cd-avg-cycle">-</div>
+            <div class="cd-stat-lbl">평균 재방문</div>
+          </div>
+          <div class="cd-stat-item" style="background:rgba(255,255,255,0.08)">
+            <div style="font-size:11px;opacity:0.85" id="cd-first-visit">-</div>
+            <div class="cd-stat-lbl">첫 방문</div>
+          </div>
+          <div class="cd-stat-item" style="background:rgba(255,255,255,0.08)">
+            <div style="font-size:11px;opacity:0.85" id="cd-last-visit">-</div>
+            <div class="cd-stat-lbl">마지막 방문</div>
           </div>
         </div>
+        <div style="text-align:center"><span id="cd-symptom" class="cd-symptom-pill" style="background:rgba(255,255,255,0.15)">-</span></div>
+        <div id="cd-memo" class="cd-memo" style="display:none"></div>
+      </div>
 
-        <!-- 주요 증상 -->
-        <div style="margin-bottom:12px">
-          <div style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:6px">주요 증상</div>
-          <span id="detail-symptom-tag" style="display:inline-block;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:500;background:var(--primary-light);color:var(--primary)">-</span>
-        </div>
-
-        <!-- 메모 -->
-        <div id="detail-memo-wrap" style="display:none;margin-bottom:14px;padding:10px 12px;background:var(--accent-light);border-radius:var(--radius-sm);font-size:12px;color:var(--text);line-height:1.55">
-          <span style="font-weight:600;color:var(--accent)">📌 메모</span>
-          <span id="detail-memo"></span>
-        </div>
-
-        <!-- 통계 -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
-          <div style="background:var(--gray-light);border-radius:var(--radius-sm);padding:12px;text-align:center">
-            <div style="font-size:22px;font-weight:800;color:var(--primary)" id="detail-visit-count">-</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">총 방문</div>
-          </div>
-          <div style="background:var(--gray-light);border-radius:var(--radius-sm);padding:12px;text-align:center">
-            <div style="font-size:13px;font-weight:700;color:var(--text)" id="detail-last-visit">-</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">마지막 방문</div>
-          </div>
-          <div style="background:var(--gray-light);border-radius:var(--radius-sm);padding:12px;text-align:center;grid-column:span 2">
-            <div style="font-size:13px;font-weight:700;color:var(--text)" id="detail-first-visit">-</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">첫 방문일</div>
-          </div>
-        </div>
-
-        <!-- CTA 버튼 -->
-        <button class="detail-cta" style="margin-bottom:0" onclick="openTherapistNote(window._detailCustomerId)">+ 오늘 소견 입력하기</button>
+      <!-- 네비게이션 -->
+      <div class="cd-nav">
+        <button class="cd-nav-btn active" id="cd-tab-btn-history" onclick="switchDetailTab('history')">📋 케어 히스토리</button>
+        <button class="cd-nav-btn" id="cd-tab-btn-info" onclick="switchDetailTab('info')">👤 고객 정보</button>
+        <button class="cd-nav-btn" id="cd-tab-btn-stats" onclick="switchDetailTab('stats')">📊 방문 통계</button>
+        <button class="cd-nav-btn cta" onclick="openTherapistNote(window._detailCustomerId)">➕ 오늘 소견 입력</button>
       </div>
     </div>
 
-    <!-- ── 우측: 케어 히스토리 (65%) ── -->
-    <div style="flex:1;min-width:0">
-      <div class="card" style="overflow:hidden">
-        <div class="card-header">
-          <div><h3>케어 히스토리</h3><p id="detail-history-count" style="color:var(--text-muted);font-size:12px;margin-top:2px"></p></div>
-        </div>
-        <!-- 히스토리 테이블 헤더 -->
-        <div style="display:grid;grid-template-columns:60px 90px 80px 60px 1fr 110px;padding:8px 20px;background:var(--gray-light);font-size:12px;color:var(--text-muted);font-weight:600;gap:8px">
-          <span>회차</span><span>날짜</span><span>불편 부위</span><span>통증</span><span>소견 요약</span><span></span>
+    <!-- ── 우측 콘텐츠 ── -->
+    <div class="cd-content">
+
+      <!-- 탭 1: 케어 히스토리 -->
+      <div class="cd-tab-panel active" id="cd-panel-history">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h2 style="font-size:18px;font-weight:800">케어 히스토리</h2>
+          <span id="detail-history-count" style="font-size:13px;color:var(--text-muted)"></span>
         </div>
         <div id="customer-visit-history"></div>
       </div>
-    </div>
-  </div>
+
+      <!-- 탭 2: 고객 정보 -->
+      <div class="cd-tab-panel" id="cd-panel-info">
+        <h2 style="font-size:18px;font-weight:800;margin-bottom:16px">고객 정보</h2>
+        <div class="ci-grid">
+          <div class="ci-card">
+            <div class="ci-card-title">👤 기본 정보</div>
+            <div id="ci-basic"></div>
+          </div>
+          <div class="ci-card">
+            <div class="ci-card-title">🏥 건강 정보</div>
+            <div id="ci-health"></div>
+          </div>
+          <div class="ci-card">
+            <div class="ci-card-title">💆 방문 설정</div>
+            <div id="ci-pref"></div>
+          </div>
+          <div class="ci-card">
+            <div class="ci-card-title">📱 계정 정보</div>
+            <div id="ci-account"></div>
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--text-muted);text-align:center;margin-top:16px">앱 가입 시 고객이 직접 입력할 수 있습니다</p>
+      </div>
+
+      <!-- 탭 3: 방문 통계 -->
+      <div class="cd-tab-panel" id="cd-panel-stats">
+        <h2 style="font-size:18px;font-weight:800;margin-bottom:16px">방문 통계</h2>
+        <div class="stat-summary-grid">
+          <div class="stat-summary-card">
+            <div class="stat-summary-num" id="stats-total">-</div>
+            <div class="stat-summary-lbl">총 방문 횟수</div>
+          </div>
+          <div class="stat-summary-card">
+            <div class="stat-summary-num" id="stats-month">-</div>
+            <div class="stat-summary-lbl">이번 달 방문</div>
+          </div>
+          <div class="stat-summary-card">
+            <div class="stat-summary-num" id="stats-cycle">-</div>
+            <div class="stat-summary-lbl">평균 재방문 주기</div>
+          </div>
+        </div>
+        <div class="card" style="padding:20px;margin-bottom:16px">
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:4px">부위별 긴장도 변화</h3>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">회차별 긴장도 추이 (1=낮음 2=보통 3=높음)</p>
+          <div id="stats-chart-wrap"><canvas id="detail-tension-chart" height="160"></canvas></div>
+        </div>
+        <div class="card" style="padding:20px">
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">주요 호소 부위 순위</h3>
+          <div id="stats-symptom-rank"></div>
+        </div>
+      </div>
+
+    </div><!-- /cd-content -->
+  </div><!-- /cd-body -->
 </div>
 
 <!-- ═══════════════════════════════════════════
@@ -1597,75 +1688,227 @@ async function openCustomerDetail(customerId) {
   showScreen('customer-detail');
 }
 
+// ── 샘플 고객 추가 정보 ──
+const sampleCustomerInfo = {
+  'demo-1':  { gender:'여', birth:'1981.03.15', email:'minser.k@gmail.com',   allergy:'없음',          medication:'소염제 복용 중',   course:'전신 관리 60분',  intensity:'중간', joinMethod:'링크' },
+  'demo-2':  { gender:'남', birth:'1974.07.22', email:'-',                   allergy:'라텍스 알레르기', medication:'물리치료 병행',    course:'허리 집중 90분',  intensity:'강함', joinMethod:'카카오' },
+  'demo-3':  { gender:'여', birth:'1988.11.30', email:'soyeon.p@naver.com',  allergy:'없음',          medication:'없음',            course:'두경부 케어 45분', intensity:'약함', joinMethod:'앱' },
+  'demo-4':  { gender:'남', birth:'1985.04.10', email:'-',                   allergy:'없음',          medication:'소염제 간헐적',   course:'하체 집중 60분',  intensity:'강함', joinMethod:'링크' },
+  'demo-5':  { gender:'여', birth:'1997.09.25', email:'sooa.j@gmail.com',    allergy:'없음',          medication:'없음',            course:'상체 이완 45분',  intensity:'약함', joinMethod:'링크' },
+  'demo-6':  { gender:'남', birth:'1970.01.08', email:'-',                   allergy:'없음',          medication:'당뇨약 복용 중',  course:'전신 관리 60분',  intensity:'약함', joinMethod:'카카오' },
+  'demo-7':  { gender:'여', birth:'1993.06.17', email:'jiyoung.y@naver.com', allergy:'없음',          medication:'없음',            course:'골반 교정 60분',  intensity:'중간', joinMethod:'링크' },
+  'demo-8':  { gender:'남', birth:'1982.12.03', email:'-',                   allergy:'없음',          medication:'소염제 복용 중',  course:'허리 집중 90분',  intensity:'중간', joinMethod:'앱' },
+  'demo-9':  { gender:'남', birth:'1989.03.21', email:'-',                   allergy:'없음',          medication:'없음',            course:'목·어깨 45분',    intensity:'중간', joinMethod:'링크' },
+  'demo-10': { gender:'여', birth:'1998.07.14', email:'haneul.i@gmail.com',  allergy:'없음',          medication:'두통약 간헐적',   course:'두경부 케어 45분', intensity:'약함', joinMethod:'카카오' },
+};
+
+let _detailChart = null;
+
+function switchDetailTab(tab) {
+  document.querySelectorAll('.cd-tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.cd-nav-btn:not(.cta)').forEach(b => b.classList.remove('active'));
+  document.getElementById('cd-panel-' + tab).classList.add('active');
+  document.getElementById('cd-tab-btn-' + tab).classList.add('active');
+}
+
 function renderCustomerDetailUI(customer, visits) {
-  const av = customer.name ? customer.name.substring(0,2) : '?';
-  const avEl = document.getElementById('detail-avatar');
+  window._detailCustomer = customer;
+  window._detailVisits = visits;
+
+  // ── 사이드바 프로필 ──
+  const av = customer.name ? customer.name.substring(0, 1) : '?';
+  const ACOLORS = ['#e8a020','#1a6b8a','#2ba0a0','#2d8a4e','#9b59b6','#c0392b'];
+  const ci = (customer.name||'?').charCodeAt(0) % ACOLORS.length;
+  const avEl = document.getElementById('cd-avatar');
   avEl.textContent = av;
-  // 아바타 색상
-  const COLORS = ['#e8a020','#1a6b8a','#2ba0a0','#2d8a4e','#9b59b6','#c0392b'];
-  const ci = (customer.name||'?').charCodeAt(0) % COLORS.length;
-  avEl.style.background = COLORS[ci];
+  avEl.style.background = ACOLORS[ci];
 
-  document.getElementById('detail-name').textContent = (customer.name || '-') + ' 님';
-  document.getElementById('detail-sub').textContent = `${customer.age||'-'}세 · ${customer.phone||'-'}`;
+  document.getElementById('cd-name').textContent = (customer.name || '-') + ' 님';
+  document.getElementById('cd-sub').textContent = `${customer.age||'-'}세 · ${customer.phone||'-'}`;
 
-  // VIP 뱃지
-  const vipEl = document.getElementById('detail-vip-badge');
-  if (vipEl) vipEl.innerHTML = customer.is_vip ? '<span class="vip-badge">VIP</span>' : '';
+  // 방문 통계
+  const vc = customer.visit_count || visits.length || 0;
+  document.getElementById('cd-visit-count').textContent = vc + '회';
+  const lastVisit = visits.length ? visits[0].visit_date : (customer.last_visit || '-');
+  const firstVisit = visits.length ? visits[visits.length-1].visit_date : (customer.last_visit || '-');
+  document.getElementById('cd-last-visit').textContent = lastVisit;
+  document.getElementById('cd-first-visit').textContent = firstVisit;
 
-  // 주요 증상 태그
-  const symEl = document.getElementById('detail-symptom-tag');
-  if (symEl) {
-    const sym = customer.main_symptom || '정보 없음';
-    const { bg, fg } = getSymptomStyle(sym);
-    symEl.textContent = sym;
-    symEl.style.background = bg;
-    symEl.style.color = fg;
+  // 평균 재방문 주기
+  let avgCycle = '-';
+  if (visits.length >= 2) {
+    const dates = visits.map(v => new Date((v.visit_date||'').replace(/\./g,'-'))).filter(d => !isNaN(d));
+    if (dates.length >= 2) {
+      dates.sort((a,b) => b-a);
+      const diffs = dates.slice(0,-1).map((d,i) => Math.round((d - dates[i+1])/(86400000)));
+      const avg = Math.round(diffs.reduce((s,d) => s+d, 0) / diffs.length);
+      avgCycle = avg + '일';
+    }
   }
+  document.getElementById('cd-avg-cycle').textContent = avgCycle;
+
+  // 증상 태그
+  const sym = customer.main_symptom || '정보 없음';
+  const symEl = document.getElementById('cd-symptom');
+  const { bg: sBg, fg: sFg } = getSymptomStyle(sym);
+  symEl.textContent = sym;
+  symEl.style.background = sBg + '66';
+  symEl.style.color = 'white';
 
   // 메모
-  const memoWrap = document.getElementById('detail-memo-wrap');
-  const memoEl = document.getElementById('detail-memo');
-  if (memoWrap && memoEl) {
-    if (customer.memo) {
-      memoEl.textContent = ' ' + customer.memo;
-      memoWrap.style.display = 'block';
-    } else {
-      memoWrap.style.display = 'none';
+  const memoEl = document.getElementById('cd-memo');
+  if (customer.memo) { memoEl.textContent = '📌 ' + customer.memo; memoEl.style.display = 'block'; }
+  else { memoEl.style.display = 'none'; }
+
+  // 상태 뱃지
+  const badgesEl = document.getElementById('cd-badges');
+  const badges = [];
+  if (vc >= 30) badges.push({ text:'VIP', color:'#fef3e0', fg:'#856404' });
+  if (customer.is_vip) badges.push({ text:'단골', color:'rgba(255,215,0,0.25)', fg:'#ffd700' });
+  // 마지막 방문 30일 이상
+  if (lastVisit && lastVisit !== '-') {
+    const last = new Date((lastVisit).replace(/\./g,'-'));
+    const daysSince = Math.round((Date.now() - last) / 86400000);
+    if (daysSince >= 30) badges.push({ text:'휴면위험', color:'rgba(232,160,32,0.25)', fg:'#e8a020' });
+  }
+  badgesEl.innerHTML = badges.map(b => `<span class="cd-status-badge" style="background:${b.color};color:${b.fg}">${b.text}</span>`).join('');
+
+  // ── 탭 1: 케어 히스토리 ──
+  document.getElementById('detail-history-count').textContent = `총 ${visits.length}건`;
+  const histEl = document.getElementById('customer-visit-history');
+  if (!visits.length) {
+    histEl.innerHTML = '<div style="padding:48px;text-align:center;color:var(--text-muted)"><div style="font-size:32px;margin-bottom:10px">📋</div><div style="font-weight:600">아직 방문 기록이 없습니다</div></div>';
+  } else {
+    const tMap = { '높음':'high', '보통':'mid', '낮음':'low' };
+    const parts = ['neck','shoulder','back','pelvis','legs'];
+    const partKo = ['목','어깨','허리','골반','다리'];
+    histEl.innerHTML = visits.map((v, i) => {
+      const rn = v.visit_number || (visits.length - i);
+      const ds = (v.visit_date||'').replace(/-/g,'.');
+      const tensionHtml = parts.map((p,j) => {
+        const t = v[p+'_tension'];
+        return t ? `<span style="font-size:12px;color:var(--text-muted)">${partKo[j]}</span> <span class="tension-mini tm-${tMap[t]||'mid'}">${t}</span>` : '';
+      }).filter(Boolean).join('  ');
+      return `<div class="hc-card">
+        <div class="hc-header" onclick="toggleHC(${i})">
+          <div class="hc-round">${rn}</div>
+          <div class="hc-meta">
+            <span class="hc-date">${ds}</span>
+            ${v.pain_area ? `<span class="condition-chip chip-pain" style="font-size:12px">${v.pain_area}</span>` : ''}
+            ${v.pain_level ? `<span class="condition-chip chip-level" style="font-size:12px">${v.pain_level}/10</span>` : ''}
+          </div>
+          <span class="hc-toggle" id="hc-arrow-${i}">▼</span>
+        </div>
+        <div class="hc-body" id="hc-body-${i}">
+          <div class="hc-section">
+            <div class="hc-section-title">문진 내용</div>
+            ${v.pain_area ? `
+              <div class="hc-row"><span class="hc-key">불편 부위</span><div class="hc-val"><span class="condition-chip chip-pain">${v.pain_area}</span></div></div>
+              <div class="hc-row"><span class="hc-key">통증 정도</span><div class="hc-val"><span class="condition-chip chip-level">${v.pain_level||'-'}/10</span></div></div>
+              <div class="hc-row"><span class="hc-key">진단 기록</span><div class="hc-val">${v.hospital_record||'없음'}</div></div>
+              <div class="hc-row"><span class="hc-key">복용 약·치료</span><div class="hc-val">${v.medication||'없음'}</div></div>
+              <div class="hc-row"><span class="hc-key">최근 특이사항</span><div class="hc-val">${v.special_notes||'없음'}</div></div>
+            ` : '<div style="color:var(--text-muted);font-size:13px;padding:4px 0">고객 문진 없음</div>'}
+          </div>
+          ${tensionHtml ? `<div class="hc-section">
+            <div class="hc-section-title">안마사 소견 — 긴장도</div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:13px">${tensionHtml}</div>
+          </div>` : ''}
+          ${v.therapist_notes ? `<div class="hc-section">
+            <div class="hc-section-title">시술 특이사항</div>
+            <div style="font-size:13px;line-height:1.6;color:var(--text)">${v.therapist_notes}</div>
+          </div>` : ''}
+          ${v.next_care_recommendation ? `<div class="hc-section">
+            <div class="hc-section-title">다음 케어 추천</div>
+            <div style="font-size:13px;line-height:1.6;color:var(--text)">${v.next_care_recommendation}</div>
+          </div>` : ''}
+          ${v.ai_summary ? `<div style="background:var(--primary-light);border-radius:8px;padding:12px;margin-top:4px">
+            <div style="font-size:11px;font-weight:700;color:var(--primary);margin-bottom:4px">🤖 AI 요약</div>
+            <div style="font-size:13px;color:var(--text);line-height:1.6">${v.ai_summary}</div>
+          </div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── 탭 2: 고객 정보 ──
+  const info = sampleCustomerInfo[customer.id] || {};
+  const ciRows = (rows) => rows.map(([label,val]) => `<div class="ci-row"><span class="ci-label">${label}</span><span class="ci-value">${val||'-'}</span></div>`).join('');
+  document.getElementById('ci-basic').innerHTML = ciRows([
+    ['이름', customer.name], ['성별', info.gender||'-'],
+    ['나이', customer.age ? customer.age+'세' : '-'],
+    ['전화번호', customer.phone], ['이메일', info.email||'-'],
+  ]);
+  document.getElementById('ci-health').innerHTML = ciRows([
+    ['주요 증상', customer.main_symptom],
+    ['알레르기', info.allergy], ['복용 약·치료', info.medication],
+    ['병원 진단', customer.hospital_record || '-'],
+  ]);
+  document.getElementById('ci-pref').innerHTML = ciRows([
+    ['선호 코스', info.course], ['선호 강도', info.intensity],
+    ['특별 요청', customer.special_request || '-'],
+  ]);
+  document.getElementById('ci-account').innerHTML = ciRows([
+    ['가입 경로', info.joinMethod||'-'],
+    ['가입일', firstVisit], ['마지막 로그인', lastVisit],
+  ]);
+
+  // ── 탭 3: 방문 통계 ──
+  document.getElementById('stats-total').textContent = vc + '회';
+  const thisMonth = new Date().toISOString().slice(0,7);
+  const monthCount = visits.filter(v => (v.visit_date||'').startsWith(thisMonth) || (v.visit_date||'').includes('2026.05')).length;
+  document.getElementById('stats-month').textContent = monthCount + '회';
+  document.getElementById('stats-cycle').textContent = avgCycle;
+
+  // 차트
+  if (_detailChart) { _detailChart.destroy(); _detailChart = null; }
+  const ctx = document.getElementById('detail-tension-chart');
+  if (visits.length < 2) {
+    document.getElementById('stats-chart-wrap').innerHTML = '<div style="padding:32px;text-align:center;color:var(--text-muted)">케어 기록이 쌓이면 그래프가 표시됩니다</div>';
+  } else {
+    if (ctx.getContext) {
+      const tNum = t => t==='높음'?3:t==='보통'?2:t==='낮음'?1:null;
+      const labels = [...visits].reverse().map((_,i) => `${i+1}회`);
+      const vRev = [...visits].reverse();
+      _detailChart = new Chart(ctx.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            { label:'목',  data:vRev.map(v=>tNum(v.neck_tension)),     borderColor:'#1a6b8a', tension:0.4, pointRadius:4, pointBackgroundColor:'#1a6b8a', fill:false },
+            { label:'어깨',data:vRev.map(v=>tNum(v.shoulder_tension)), borderColor:'#e8a020', tension:0.4, pointRadius:4, pointBackgroundColor:'#e8a020', fill:false },
+            { label:'허리',data:vRev.map(v=>tNum(v.back_tension)),     borderColor:'#2d8a4e', tension:0.4, pointRadius:4, pointBackgroundColor:'#2d8a4e', fill:false },
+            { label:'골반',data:vRev.map(v=>tNum(v.pelvis_tension)),   borderColor:'#9b59b6', tension:0.4, pointRadius:4, pointBackgroundColor:'#9b59b6', fill:false },
+          ]
+        },
+        options: { responsive:true, plugins:{legend:{position:'bottom'}}, scales:{y:{min:0,max:4,ticks:{callback:v=>['','낮음','보통','높음',''][v]}},x:{grid:{display:false}}} }
+      });
     }
   }
 
-  // 통계
-  document.getElementById('detail-visit-count').textContent = (customer.visit_count || visits.length || 0) + '회';
-  const lastVisit = visits.length ? visits[0].visit_date : (customer.last_visit || '-');
-  const firstVisit = visits.length ? visits[visits.length-1].visit_date : (customer.last_visit || '-');
-  const lvEl = document.getElementById('detail-last-visit');
-  if (lvEl) lvEl.textContent = lastVisit;
-  document.getElementById('detail-first-visit').textContent = firstVisit;
-  document.getElementById('detail-history-count').textContent = `총 ${visits.length}건`;
+  // 증상 순위
+  const areaCounts = {};
+  visits.forEach(v => { if (v.pain_area) areaCounts[v.pain_area] = (areaCounts[v.pain_area]||0) + 1; });
+  const sorted = Object.entries(areaCounts).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('stats-symptom-rank').innerHTML = sorted.length
+    ? sorted.map(([area,cnt],i) => `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span style="width:20px;font-weight:700;color:var(--primary)">${i+1}</span>
+        <span class="symptom-tag" style="background:${getSymptomStyle(area).bg};color:${getSymptomStyle(area).fg}">${area}</span>
+        <div style="flex:1;background:var(--border);border-radius:4px;height:6px;overflow:hidden"><div style="height:100%;background:var(--primary);width:${Math.round(cnt/visits.length*100)}%"></div></div>
+        <span style="font-size:12px;color:var(--text-muted)">${cnt}회</span>
+      </div>`).join('')
+    : '<div style="padding:16px;text-align:center;color:var(--text-muted)">데이터 없음</div>';
 
-  const histEl = document.getElementById('customer-visit-history');
-  if (!visits.length) {
-    histEl.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted)"><div style="font-size:28px;margin-bottom:8px">📋</div><div>아직 방문 기록이 없습니다</div></div>';
-    return;
-  }
+  // 기본 탭으로 리셋
+  switchDetailTab('history');
+}
 
-  histEl.innerHTML = visits.map((v, i) => {
-    const roundNum = v.visit_number || (visits.length - i);
-    const dateStr = (v.visit_date||'').replace(/-/g,'.');
-    const noteText = v.therapist_notes || v.ai_summary || '-';
-    const noteShort = noteText.length > 50 ? noteText.substring(0,50) + '…' : noteText;
-    return `<div style="display:grid;grid-template-columns:60px 90px 80px 60px 1fr 110px;padding:13px 20px;border-bottom:1px solid var(--border);align-items:center;gap:8px;font-size:13px;transition:background 0.15s" onmouseover="this.style.background='var(--primary-light)'" onmouseout="this.style.background=''">
-      <div style="display:flex;align-items:center;justify-content:center">
-        <span style="width:28px;height:28px;background:var(--primary);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">${roundNum}</span>
-      </div>
-      <div style="color:var(--text-muted)">${dateStr}</div>
-      <div>${v.pain_area ? `<span class="condition-chip chip-pain" style="font-size:12px">${v.pain_area}</span>` : '<span style="color:var(--text-muted)">-</span>'}</div>
-      <div>${v.pain_level ? `<span class="condition-chip chip-level" style="font-size:12px">${v.pain_level}/10</span>` : '<span style="color:var(--text-muted)">-</span>'}</div>
-      <div style="color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${noteText !== '-' ? noteText : ''}">${noteShort}</div>
-      <div><button class="btn-detail-action" onclick="openTherapistNote('${customer.id}')">소견 보기·수정</button></div>
-    </div>`;
-  }).join('');
+function toggleHC(i) {
+  const body = document.getElementById('hc-body-' + i);
+  const arrow = document.getElementById('hc-arrow-' + i);
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  if (arrow) arrow.style.transform = isOpen ? '' : 'rotate(180deg)';
 }
 
 // ══════════════════════════════════════════════
