@@ -1212,6 +1212,17 @@
           <p>시술 중 발견한 점, 고객 반응, 특별히 조심한 부위 등을 적어주세요</p>
         </div>
       </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:13px;color:var(--text-muted)">직접 입력하거나 마이크로 말씀해주세요</span>
+        <button onclick="startVoiceInput('therapist-notes', this)"
+          id="mic-btn-notes"
+          style="display:flex;align-items:center;gap:6px;padding:7px 14px;
+          background:var(--primary-light);color:var(--primary);
+          border:1.5px solid var(--primary);border-radius:20px;
+          font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s">
+          🎤 음성 입력
+        </button>
+      </div>
       <textarea id="therapist-notes" rows="3" placeholder="예: 오른쪽 승모근에 심한 결절 발견, 좌측 견갑골 주변 근막 유착 확인, 압력 중강도로 진행"></textarea>
       <div class="quick-tags" style="margin-top:10px">
         <span style="font-size:11px;color:var(--text-muted);padding:5px 6px">빠른 입력</span>
@@ -1231,6 +1242,17 @@
           <h3>다음 방문 때 집중할 부위</h3>
           <p>다음 번 시술 때 중점적으로 봐야 할 부위와 방향을 남겨주세요</p>
         </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:13px;color:var(--text-muted)">직접 입력하거나 마이크로 말씀해주세요</span>
+        <button onclick="startVoiceInput('next-care', this)"
+          id="mic-btn-next"
+          style="display:flex;align-items:center;gap:6px;padding:7px 14px;
+          background:var(--primary-light);color:var(--primary);
+          border:1.5px solid var(--primary);border-radius:20px;
+          font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s">
+          🎤 음성 입력
+        </button>
       </div>
       <textarea id="next-care" rows="3" placeholder="예: 우측 승모근 지속 관리 필요, 견갑골 주변 이완 집중, 자세 교정 스트레칭 안내"></textarea>
       <div class="quick-tags" style="margin-top:10px">
@@ -2462,6 +2484,77 @@ function skipIntake() {
 // ══════════════════════════════════════════════
 // 안마사 소견
 // ══════════════════════════════════════════════
+let _recognition = null;
+let _isRecording = false;
+
+function startVoiceInput(fieldId, btn) {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    showToast('이 브라우저는 음성 입력을 지원하지 않습니다. 크롬을 사용해주세요.', 'error');
+    return;
+  }
+
+  // 이미 녹음 중이면 중지
+  if (_isRecording && _recognition) {
+    _recognition.stop();
+    return;
+  }
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  _recognition = new SpeechRecognition();
+  _recognition.lang = 'ko-KR';
+  _recognition.continuous = true;
+  _recognition.interimResults = true;
+
+  const field = document.getElementById(fieldId);
+  const originalText = field.value;
+
+  // 버튼 상태 변경
+  btn.innerHTML = '⏹ 중지';
+  btn.style.background = 'var(--danger-light)';
+  btn.style.color = 'var(--danger)';
+  btn.style.borderColor = 'var(--danger)';
+  _isRecording = true;
+
+  showToast('🎤 듣고 있습니다... 말씀해주세요', '');
+
+  _recognition.onresult = function(e) {
+    let interim = '';
+    let final = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) {
+        final += e.results[i][0].transcript;
+      } else {
+        interim += e.results[i][0].transcript;
+      }
+    }
+    field.value = originalText + (originalText ? ' ' : '') + final + interim;
+  };
+
+  _recognition.onend = function() {
+    _isRecording = false;
+    btn.innerHTML = '🎤 음성 입력';
+    btn.style.background = 'var(--primary-light)';
+    btn.style.color = 'var(--primary)';
+    btn.style.borderColor = 'var(--primary)';
+    showToast('✅ 음성 입력 완료', 'success');
+  };
+
+  _recognition.onerror = function(e) {
+    _isRecording = false;
+    btn.innerHTML = '🎤 음성 입력';
+    btn.style.background = 'var(--primary-light)';
+    btn.style.color = 'var(--primary)';
+    btn.style.borderColor = 'var(--primary)';
+    if (e.error === 'not-allowed') {
+      showToast('마이크 권한을 허용해주세요', 'error');
+    } else {
+      showToast('음성 인식 오류: ' + e.error, 'error');
+    }
+  };
+
+  _recognition.start();
+}
+
 function selectTension(part, level, btn) {
   const row = btn.closest('.tension-options');
   row.querySelectorAll('.tension-btn').forEach(b => {
